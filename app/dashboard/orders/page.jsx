@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MobileOrders } from "@/components/orders/mobile-orders";
+import { DesktopOrders } from "@/components/orders/desktop-orders";
 
 export default function OrdersPage() {
   const [isMobile, setIsMobile] = useState(false);
@@ -19,7 +20,7 @@ export default function OrdersPage() {
   return (
     <div>
       {isMobile && <MobileOrders />}
-      {!isMobile && <div>Desktop version not implemented yet</div>}
+      {!isMobile && <DesktopOrders />}
     </div>
   );
 }

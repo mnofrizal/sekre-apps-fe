@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DesktopMenuList } from "@/components/meal-order/desktop-menu-list";
+import { DesktopOrders } from "@/components/orders/desktop-orders";
+import { MobileOrders } from "@/components/orders/mobile-orders";
 
-export default function MenuPage() {
+export default function AllOrdersPage() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -17,8 +18,8 @@ export default function MenuPage() {
   }, []);
 
   if (isMobile) {
-    return <div>Mobile menu list has not been implemented yet.</div>;
+    return <MobileOrders />;
   }
 
-  return <DesktopMenuList />;
+  return <DesktopOrders />;
 }

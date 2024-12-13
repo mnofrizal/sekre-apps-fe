@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useEffect } from "react";
 
 const categories = [
   {
@@ -17,21 +18,21 @@ const categories = [
   {
     title: "Transport",
     icon: Car,
-    href: "/dashboard/transport",
+    href: "/dashboard/transport/requests",
     bgColor: "bg-yellow-50",
     iconColor: "text-yellow-600",
   },
   {
     title: "Room",
     icon: Building2,
-    href: "/dashboard/room",
+    href: "/dashboard/room/booking",
     bgColor: "bg-blue-50",
     iconColor: "text-blue-600",
   },
   {
     title: "Stationery",
     icon: FileBox,
-    href: "/dashboard/stationary",
+    href: "/dashboard/stationary/request",
     bgColor: "bg-pink-50",
     iconColor: "text-pink-600",
   },
@@ -56,6 +57,20 @@ const itemVariants = {
 };
 
 export function MobileDashboard() {
+  useEffect(() => {
+    const preventGoBack = (e) => {
+      e.preventDefault();
+      history.pushState(null, "", window.location.pathname);
+    };
+
+    window.history.pushState(null, "", window.location.pathname);
+    window.addEventListener("popstate", preventGoBack);
+
+    return () => {
+      window.removeEventListener("popstate", preventGoBack);
+    };
+  }, []);
+
   return (
     <motion.div
       className="space-y-6 pb-16 pt-4"
@@ -130,11 +145,24 @@ export function MobileDashboard() {
             whileTap={{ scale: 0.98 }}
           >
             <div>
-              <p className="text-muted-foreground">Total Orders</p>
+              <p className="text-muted-foreground">Meal Orders</p>
               <p className="text-2xl font-bold">24</p>
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-50">
               <UtensilsCrossed className="h-5 w-5 text-green-600" />
+            </div>
+          </motion.div>
+          <motion.div
+            className="flex items-center justify-between rounded-xl border bg-background p-4"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div>
+              <p className="text-muted-foreground">Transport Requests</p>
+              <p className="text-2xl font-bold">12</p>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-50">
+              <Car className="h-5 w-5 text-yellow-600" />
             </div>
           </motion.div>
           <motion.div
@@ -148,6 +176,19 @@ export function MobileDashboard() {
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
               <Building2 className="h-5 w-5 text-blue-600" />
+            </div>
+          </motion.div>
+          <motion.div
+            className="flex items-center justify-between rounded-xl border bg-background p-4"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div>
+              <p className="text-muted-foreground">Stationery Requests</p>
+              <p className="text-2xl font-bold">15</p>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-50">
+              <FileBox className="h-5 w-5 text-pink-600" />
             </div>
           </motion.div>
         </div>

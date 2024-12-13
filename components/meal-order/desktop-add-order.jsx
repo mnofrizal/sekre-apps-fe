@@ -17,6 +17,7 @@ import { Check, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Sample data for dropdowns
+const zonaWaktuOrder = ["Sarapan", "Makan Siang", "Makan Sore", "Makan Malam"];
 const bidangOptions = ["IT", "HR", "Finance", "Marketing", "Operations"];
 const menuOptions = [
   "Nasi Goreng",
@@ -44,6 +45,7 @@ const plnipNames = {
 
 export default function AddOrder() {
   const router = useRouter();
+  const [zonaWaktu, setZonaWaktu] = useState("");
   const [subBidang, setSubBidang] = useState("");
   const [judulPekerjaan, setJudulPekerjaan] = useState("");
   const [counts, setCounts] = useState({
@@ -219,7 +221,7 @@ export default function AddOrder() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Add Order</h1>
         <Button onClick={() => router.back()} variant="outline">
@@ -253,6 +255,38 @@ export default function AddOrder() {
             />
           </div>
         </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="dropPoint">Order</Label>
+            <Select value={zonaWaktu} onValueChange={setZonaWaktu}>
+              <SelectTrigger id="zonaWaktu">
+                <SelectValue placeholder="Select drop point" />
+              </SelectTrigger>
+              <SelectContent>
+                {zonaWaktuOrder.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="dropPoint">Drop Point</Label>
+            <Select value={dropPoint} onValueChange={setDropPoint}>
+              <SelectTrigger id="dropPoint">
+                <SelectValue placeholder="Select drop point" />
+              </SelectTrigger>
+              <SelectContent>
+                {dropPointOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:grid-cols-5">
           {Object.entries(counts).map(([type, count]) => (
@@ -283,22 +317,6 @@ export default function AddOrder() {
             </div>
           </CardContent>
         </Card>
-
-        <div>
-          <Label htmlFor="dropPoint">Drop Point</Label>
-          <Select value={dropPoint} onValueChange={setDropPoint}>
-            <SelectTrigger id="dropPoint">
-              <SelectValue placeholder="Select drop point" />
-            </SelectTrigger>
-            <SelectContent>
-              {dropPointOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
         <Button type="submit" className="w-full" disabled={!isFormValid}>
           Submit Order

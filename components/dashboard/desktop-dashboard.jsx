@@ -1,56 +1,124 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UtensilsCrossed, Car, Building2, FileBox } from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+
+const cardVariants = {
+  initial: { opacity: 0, y: 20, scale: 0.8 },
+  animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5 } },
+  hover: { scale: 1.05, transition: { duration: 0.2 } },
+  tap: { scale: 0.95, transition: { duration: 0.2 } },
+};
+
+const containerVariants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
 
 export function DesktopDashboard() {
+  const statisticsCards = [
+    { title: "Total Meal Orders", value: "24", icon: UtensilsCrossed },
+    { title: "Transport Requests", value: "12", icon: Car },
+    { title: "Room Bookings", value: "8", icon: Building2 },
+    { title: "Stationary Requests", value: "32", icon: FileBox },
+  ];
+
+  const manageOrderCards = [
+    {
+      title: "Meal Orders",
+      icon: UtensilsCrossed,
+      href: "/dashboard/meal-order/list",
+      color: "text-green-600",
+    },
+    {
+      title: "Transport",
+      icon: Car,
+      href: "/dashboard/transport/requests",
+      color: "text-blue-600",
+    },
+    {
+      title: "Room",
+      icon: Building2,
+      href: "/dashboard/room/booking",
+      color: "text-purple-600",
+    },
+    {
+      title: "Stationary",
+      icon: FileBox,
+      href: "/dashboard/stationary/request",
+      color: "text-yellow-600",
+    },
+  ];
+
   return (
-    <div className="space-y-6">
+    <motion.div
+      className="space-y-6"
+      initial="initial"
+      animate="animate"
+      variants={containerVariants}
+    >
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">General Affairs Dashboard</h1>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Meal Orders
-            </CardTitle>
-            <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">24</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Transport Requests
-            </CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Room Bookings</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Stationary Requests
-            </CardTitle>
-            <FileBox className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">32</div>
-          </CardContent>
-        </Card>
+      <motion.div
+        className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+        variants={containerVariants}
+      >
+        {statisticsCards.map((card, index) => (
+          <motion.div
+            key={index}
+            variants={cardVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <Card className="flex h-[140px] flex-col justify-between">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {card.title}
+                </CardTitle>
+                <card.icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{card.value}</div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </motion.div>
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold">Manage Services</h2>
+        <motion.div
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+          variants={containerVariants}
+        >
+          {manageOrderCards.map((card, index) => (
+            <motion.div
+              key={index}
+              variants={cardVariants}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <Link href={card.href} className="block h-[140px]">
+                <Card className="h-full cursor-pointer transition-colors hover:bg-accent">
+                  <CardContent className="flex h-full flex-col items-center justify-center p-6">
+                    <card.icon className={`h-8 w-8 ${card.color} mb-2`} />
+                    <h3 className="text-center text-lg font-semibold">
+                      {card.title}
+                    </h3>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

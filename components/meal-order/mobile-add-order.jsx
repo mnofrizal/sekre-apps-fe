@@ -188,7 +188,7 @@ export default function MobileAddOrder({
       <div className="space-y-6 p-4">
         <div>
           <Select value={zonaWaktu} onValueChange={setZonaWaktu}>
-            <SelectTrigger id="subBidang" className="mt-1 w-full">
+            <SelectTrigger id="zonaWaktu" className="mt-1 w-full">
               <SelectValue placeholder="Pilih Waktu" />
             </SelectTrigger>
             <SelectContent>

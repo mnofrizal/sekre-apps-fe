@@ -13,7 +13,7 @@ const bottomNavItems = [
   },
   {
     title: "Orders",
-    href: "/dashboard/orders",
+    href: "/dashboard/all-orders",
     icon: UtensilsCrossed,
     badge: 3,
   },

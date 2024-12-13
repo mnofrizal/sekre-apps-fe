@@ -29,6 +29,11 @@ const menuItems = [
     href: "/dashboard",
   },
   {
+    title: "All Orders",
+    icon: ClipboardList,
+    href: "/dashboard/all-orders",
+  },
+  {
     title: "Meal Orders",
     icon: UtensilsCrossed,
     items: [
@@ -54,8 +59,8 @@ const menuItems = [
     icon: Car,
     items: [
       {
-        title: "Request List",
-        href: "/dashboard/transport/list",
+        title: "Requests",
+        href: "/dashboard/transport/requests",
         icon: ClipboardList,
       },
       {
@@ -70,13 +75,13 @@ const menuItems = [
     icon: Building2,
     items: [
       {
-        title: "Bookings",
-        href: "/dashboard/room/bookings",
+        title: "Booking",
+        href: "/dashboard/room/booking",
         icon: ClipboardList,
       },
       {
         title: "Room List",
-        href: "/dashboard/room/list",
+        href: "/dashboard/room/room-lists",
         icon: MenuIcon,
       },
     ],
@@ -86,8 +91,8 @@ const menuItems = [
     icon: FileBox,
     items: [
       {
-        title: "Request List",
-        href: "/dashboard/stationary/list",
+        title: "Request",
+        href: "/dashboard/stationary/request",
         icon: ClipboardList,
       },
       {
@@ -105,7 +110,7 @@ function MenuItem({ item, isActive, level = 0 }) {
   if (item.items) {
     return (
       <Collapsible className="w-full">
-        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-accent hover:text-accent-foreground">
+        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-3 transition-colors hover:bg-accent hover:text-accent-foreground">
           <div className="flex items-center gap-3">
             <item.icon className="h-5 w-5" />
             <span>{item.title}</span>
@@ -132,7 +137,7 @@ function MenuItem({ item, isActive, level = 0 }) {
         whileHover={{ x: 5 }}
         whileTap={{ scale: 0.95 }}
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
+          "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors",
           isActive
             ? "bg-primary text-primary-foreground"
             : "hover:bg-accent hover:text-accent-foreground"
