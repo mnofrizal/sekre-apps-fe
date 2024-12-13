@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "@/components/sidebar";
 import Navbar from "@/components/navbar";
-import { MobileNav } from "@/components/mobile-nav";
+import MobileNav, { bottomNavItems } from "@/components/mobile-nav";
 import { BackHeader } from "@/components/back-header";
 import { usePathname } from "next/navigation";
 
@@ -32,7 +32,7 @@ export default function DashboardLayout({ children }) {
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
-  const isDashboardPage = pathname === "/dashboard";
+  //const isDashboardPage = pathname === "/dashboard";
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -47,23 +47,29 @@ export default function DashboardLayout({ children }) {
         {!isMobile && <Navbar />}
 
         {/* Mobile Back Header - only visible on mobile and not on dashboard page */}
-        {isMobile && !isDashboardPage && (
+        {isMobile && !bottomNavItems.some((item) => pathname === item.href) && (
           <BackHeader title={getPageTitle(pathname)} />
         )}
 
         {/* Main Content */}
         <main
           className={`flex-1 overflow-x-hidden overflow-y-auto bg-background pb-16 lg:pb-0 ${
-            isMobile && !isDashboardPage ? "pt-14" : ""
+            isMobile && !bottomNavItems.some((item) => pathname === item.href)
+              ? "pt-14"
+              : ""
           }`}
         >
-          <div className="container mx-auto px-1 py-1 sm:px-6 lg:px-8">
+          <div className="container mx-auto px-4 py-1 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
 
         {/* Mobile Bottom Navigation - only visible on dashboard page */}
-        {isClient && isMobile && isDashboardPage && <MobileNav />}
+        {isClient &&
+          isMobile &&
+          bottomNavItems.some((item) => pathname === item.href) && (
+            <MobileNav />
+          )}
       </div>
     </div>
   );

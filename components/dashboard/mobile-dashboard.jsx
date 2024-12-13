@@ -80,7 +80,7 @@ export function MobileDashboard() {
     >
       {/* Header */}
       <motion.div
-        className="flex items-center justify-between px-4"
+        className="flex items-center justify-between"
         variants={itemVariants}
       >
         <div>
@@ -96,7 +96,7 @@ export function MobileDashboard() {
       </motion.div>
 
       {/* Search */}
-      <motion.div className="px-4" variants={itemVariants}>
+      <motion.div className="" variants={itemVariants}>
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search menu..." className="bg-background pl-9" />
@@ -104,7 +104,7 @@ export function MobileDashboard() {
       </motion.div>
 
       {/* Categories */}
-      <motion.div variants={itemVariants} className="px-4">
+      <motion.div variants={itemVariants} className="">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Categories</h2>
           <Link href="/dashboard/categories" className="text-sm text-blue-600">
@@ -131,7 +131,7 @@ export function MobileDashboard() {
       </motion.div>
 
       {/* Today's Stats */}
-      <motion.div variants={itemVariants} className="px-4">
+      <motion.div variants={itemVariants} className="">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Today's Stats</h2>
           <Link href="/dashboard/reports" className="text-sm text-blue-600">

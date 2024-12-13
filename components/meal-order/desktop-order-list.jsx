@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { OrderDetailDialog } from "./order-detail-dialog";
 
 const orders = [
   {
@@ -69,6 +70,8 @@ const getStatusColor = (status) => {
 
 export function DesktopOrderList() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const filteredOrders = orders.filter(
     (order) =>
@@ -76,6 +79,11 @@ export function DesktopOrderList() {
       order.pic.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.subBidang.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleOrderClick = (order) => {
+    setSelectedOrder(order);
+    setDialogOpen(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -125,7 +133,14 @@ export function DesktopOrderList() {
           <TableBody>
             {filteredOrders.map((order) => (
               <TableRow key={order.id}>
-                <TableCell>{order.id}</TableCell>
+                <TableCell>
+                  <button
+                    onClick={() => handleOrderClick(order)}
+                    className="text-primary hover:underline"
+                  >
+                    {order.id}
+                  </button>
+                </TableCell>
                 <TableCell>{order.subBidang}</TableCell>
                 <TableCell>{order.jumlah}</TableCell>
                 <TableCell>{order.dropPoint}</TableCell>
@@ -145,7 +160,9 @@ export function DesktopOrderList() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>View details</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleOrderClick(order)}>
+                        View details
+                      </DropdownMenuItem>
                       <DropdownMenuItem>Edit</DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600">
                         Delete
@@ -169,6 +186,12 @@ export function DesktopOrderList() {
           </Button>
         </div>
       </div>
+
+      <OrderDetailDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        order={selectedOrder}
+      />
     </div>
   );
 }

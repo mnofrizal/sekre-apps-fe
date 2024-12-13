@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,6 +14,8 @@ import {
   ClipboardList,
   MenuIcon,
   BarChart3,
+  Settings,
+  Users,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -102,20 +105,50 @@ const menuItems = [
       },
     ],
   },
+  {
+    title: "Manage Menu",
+    icon: Settings,
+    items: [
+      {
+        title: "Manage User",
+        href: "/dashboard/admin/manage-user",
+        icon: Users,
+      },
+      {
+        title: "Manage Employee",
+        href: "/dashboard/admin/manage-employee",
+        icon: Users,
+      },
+    ],
+  },
 ];
 
 function MenuItem({ item, isActive, level = 0 }) {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (item.items) {
+      const isCurrentPathInSubItems = item.items.some((subItem) =>
+        pathname.startsWith(subItem.href)
+      );
+      setIsOpen(isCurrentPathInSubItems);
+    }
+  }, [pathname, item.items]);
 
   if (item.items) {
     return (
-      <Collapsible className="w-full">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-3 transition-colors hover:bg-accent hover:text-accent-foreground">
           <div className="flex items-center gap-3">
             <item.icon className="h-5 w-5" />
             <span>{item.title}</span>
           </div>
-          <ChevronDown className="h-4 w-4 transform transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-1 pl-6">
           {item.items.map((subItem) => (

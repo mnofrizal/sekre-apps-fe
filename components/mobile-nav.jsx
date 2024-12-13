@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Home, UtensilsCrossed, Bell, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const bottomNavItems = [
+export const bottomNavItems = [
   {
     title: "Home",
     href: "/dashboard",
@@ -29,7 +29,7 @@ const bottomNavItems = [
   },
 ];
 
-export function MobileNav() {
+export default function MobileNav() {
   const pathname = usePathname();
 
   return (
@@ -42,12 +42,15 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center w-12 h-12 rounded-full",
-                isActive ? "text-primary" : "text-muted-foreground"
+                "flex flex-col items-center justify-center w-12 h-12 rounded-2xl",
+                pathname === item.href
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:text-primary hover:bg-primary/10"
               )}
             >
               <div className="relative">
                 <item.icon className="h-6 w-6" />
+
                 {item.badge && (
                   <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
                     {item.badge}
