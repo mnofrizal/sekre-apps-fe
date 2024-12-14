@@ -78,15 +78,15 @@ export function DesktopDashboard() {
             whileHover="hover"
             whileTap="tap"
           >
-            <Card className="flex h-[140px] flex-col justify-between">
+            <Card className="flex h-[140px] flex-col justify-between rounded-2xl border-gray-100 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="text-lg font-thin">
                   {card.title}
                 </CardTitle>
-                <card.icon className="h-4 w-4 text-muted-foreground" />
+                <card.icon className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{card.value}</div>
+                <div className="text-4xl font-bold">{card.value}</div>
               </CardContent>
             </Card>
           </motion.div>
@@ -106,7 +106,7 @@ export function DesktopDashboard() {
               whileTap="tap"
             >
               <Link href={card.href} className="block h-[140px]">
-                <Card className="h-full cursor-pointer transition-colors hover:bg-accent">
+                <Card className="h-full cursor-pointer rounded-2xl border-gray-100 shadow-sm transition-colors hover:bg-accent">
                   <CardContent className="flex h-full flex-col items-center justify-center p-6">
                     <card.icon className={`h-8 w-8 ${card.color} mb-2`} />
                     <h3 className="text-center text-lg font-semibold">

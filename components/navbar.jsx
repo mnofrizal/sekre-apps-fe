@@ -70,9 +70,12 @@ export default function Navbar({ children }) {
 
         <div className="ml-auto flex items-center gap-2">
           <div className="flex-1 md:flex-initial">
-            <div className="relative max-w-md">
+            <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search..." className="pl-8" />
+              <Input
+                placeholder="Search..."
+                className="w-full rounded-xl pl-8"
+              />
             </div>
           </div>
           <Button variant="ghost" size="icon" className="relative">

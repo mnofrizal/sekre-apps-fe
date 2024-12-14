@@ -53,15 +53,13 @@ export default function DashboardLayout({ children }) {
 
         {/* Main Content */}
         <main
-          className={`flex-1 overflow-x-hidden overflow-y-auto bg-background pb-16 lg:pb-0 ${
+          className={`container p-4 md:p-6 flex-1 overflow-x-hidden overflow-y-auto bg-background pb-16 lg:pb-0 ${
             isMobile && !bottomNavItems.some((item) => pathname === item.href)
               ? "pt-14"
               : ""
           }`}
         >
-          <div className="container mx-auto px-4 py-1 sm:px-6 lg:px-8">
-            {children}
-          </div>
+          {children}
         </main>
 
         {/* Mobile Bottom Navigation - only visible on dashboard page */}
