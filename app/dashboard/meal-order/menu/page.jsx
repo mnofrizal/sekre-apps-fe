@@ -20,5 +20,9 @@ export default function MenuPage() {
     return <div>Mobile menu list has not been implemented yet.</div>;
   }
 
-  return <DesktopMenuList />;
+  return (
+    <div className="p-6">
+      <DesktopMenuList />
+    </div>
+  );
 }

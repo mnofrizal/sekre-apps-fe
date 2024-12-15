@@ -21,5 +21,9 @@ export default function AllOrdersPage() {
     return <MobileOrders />;
   }
 
-  return <DesktopOrders />;
+  return (
+    <div className="p-6">
+      <DesktopOrders />
+    </div>
+  );
 }

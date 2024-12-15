@@ -174,10 +174,6 @@ export function DesktopOrders() {
                       <p>
                         <span className="font-medium">Date:</span> {order.date}
                       </p>
-                      <p>
-                        <span className="font-medium">Type:</span>{" "}
-                        {orderTypes[order.type].label}
-                      </p>
                     </div>
                   </CardContent>
                   {order.needsApproval && (

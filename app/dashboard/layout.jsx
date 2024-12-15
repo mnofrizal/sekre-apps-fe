@@ -6,6 +6,7 @@ import Navbar from "@/components/navbar";
 import MobileNav, { bottomNavItems } from "@/components/mobile-nav";
 import { BackHeader } from "@/components/back-header";
 import { usePathname } from "next/navigation";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const getPageTitle = (pathname) => {
   const segments = pathname.split("/");
@@ -32,37 +33,39 @@ export default function DashboardLayout({ children }) {
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
-  //const isDashboardPage = pathname === "/dashboard";
-
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen">
       {/* Sidebar - only visible on desktop */}
       {!isMobile && (
         <div className="hidden w-64 flex-shrink-0 border-r bg-card lg:block">
           <Sidebar />
         </div>
       )}
-      <div className="flex w-full flex-1 flex-col overflow-hidden">
+
+      {/* Main content wrapper */}
+      <div className="flex w-full flex-1 flex-col">
         {/* Desktop Navbar */}
         {!isMobile && <Navbar />}
 
-        {/* Mobile Back Header - only visible on mobile and not on dashboard page */}
+        {/* Mobile Back Header */}
         {isMobile && !bottomNavItems.some((item) => pathname === item.href) && (
           <BackHeader title={getPageTitle(pathname)} />
         )}
 
-        {/* Main Content */}
-        <main
-          className={`container p-4 md:p-6 flex-1 overflow-x-hidden overflow-y-auto bg-background pb-16 lg:pb-0 ${
-            isMobile && !bottomNavItems.some((item) => pathname === item.href)
-              ? "pt-14"
-              : ""
-          }`}
-        >
-          {children}
-        </main>
+        {/* Main scrollable area with shadcn ScrollArea */}
+        <ScrollArea className="flex-1">
+          <main
+            className={`container px-4 md:px-6 mx-auto  w-full pb-16 lg:pb-0 ${
+              isMobile && !bottomNavItems.some((item) => pathname === item.href)
+                ? "pt-14"
+                : "pt-4"
+            }`}
+          >
+            {children}
+          </main>
+        </ScrollArea>
 
-        {/* Mobile Bottom Navigation - only visible on dashboard page */}
+        {/* Mobile Bottom Navigation */}
         {isClient &&
           isMobile &&
           bottomNavItems.some((item) => pathname === item.href) && (

@@ -228,7 +228,7 @@ export default function Sidebar() {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex-grow overflow-y-auto p-4">
-        <div className="mb-6 py-2">
+        <div className="mb-6">
           <div className="flex items-center gap-2 px-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e56c48]">
               <Zap className="h-5 w-5 text-primary-foreground" />
@@ -241,15 +241,17 @@ export default function Sidebar() {
             </div>
           </div>
         </div>
-        <nav className="space-y-2 px-2">
-          {menuItems.map((item) => (
-            <MenuItem
-              key={item.title}
-              item={item}
-              isActive={pathname === item?.href}
-            />
-          ))}
-        </nav>
+        <div className="py-2">
+          <nav className="space-y-2 px-2">
+            {menuItems.map((item) => (
+              <MenuItem
+                key={item.title}
+                item={item}
+                isActive={pathname === item?.href}
+              />
+            ))}
+          </nav>
+        </div>
       </div>
       <div className="border-t p-4">
         <div className="flex items-center gap-3">

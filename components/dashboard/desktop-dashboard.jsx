@@ -5,6 +5,8 @@ import { UtensilsCrossed, Car, Building2, FileBox } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
+import { DesktopDashboardOrders } from "./desktop-dashboard-order-list";
+import { Badge } from "../ui/badge";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20, scale: 0.8 },
@@ -23,7 +25,15 @@ const containerVariants = {
   },
 };
 
+const data = [
+  { project: "Meal", count: 95 },
+  { project: "Transport", count: 88 },
+  { project: "Room", count: 76 },
+  { project: "ATK", count: 45 },
+];
+
 export function DesktopDashboard() {
+  const maxCount = Math.max(...data.map((item) => item.count));
   const statisticsCards = [
     { title: "Total Meal Orders", value: "24", icon: UtensilsCrossed },
     { title: "Transport Requests", value: "12", icon: Car },
@@ -57,83 +67,181 @@ export function DesktopDashboard() {
       color: "text-yellow-600",
     },
   ];
+  const spaces = [
+    { category: "meal_order", subBidang: "Operasi 5-7", icon: UtensilsCrossed },
+    { category: "transport", subBidang: "Fasilitas dan Sarana", icon: Car },
+    { category: "atk", subBidang: "Pemeliharaan Turbin", icon: FileBox },
+  ];
 
   return (
     <motion.div
-      className="space-y-6"
+      className="grid grid-cols-4 gap-6"
       initial="initial"
       animate="animate"
       variants={containerVariants}
     >
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-4xl font-medium tracking-tight">
-            Welcome back, Admin
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Here's an overview of your services activities
-          </p>
+      <div className="col-span-3 space-y-10">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-medium tracking-tight">
+              Welcome back, Admin
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              Here's an overview of your services activities
+            </p>
+          </div>
+          <Link href="/dashboard/all-orders">
+            <Button
+              size="lg"
+              className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Go to All Orders
+            </Button>
+          </Link>
         </div>
-        <Link href="/dashboard/all-orders">
-          <Button
-            size="lg"
-            className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            Go to All Orders
-          </Button>
-        </Link>
-      </div>
-      <motion.div
-        className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-        variants={containerVariants}
-      >
-        {statisticsCards.map((card, index) => (
-          <motion.div
-            key={index}
-            variants={cardVariants}
-            whileHover="hover"
-            whileTap="tap"
-          >
-            <Card className="flex h-[140px] flex-col justify-between rounded-2xl border-gray-300 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-lg font-thin">
-                  {card.title}
-                </CardTitle>
-                <card.icon className="h-5 w-5 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-4xl font-bold">{card.value}</div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </motion.div>
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold">Manage Services</h2>
         <motion.div
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+          className="grid gap-7 md:grid-cols-2 lg:grid-cols-4"
           variants={containerVariants}
         >
-          {manageOrderCards.map((card, index) => (
+          {statisticsCards.map((card, index) => (
             <motion.div
               key={index}
               variants={cardVariants}
               whileHover="hover"
               whileTap="tap"
             >
-              <Link href={card.href} className="block h-[140px]">
-                <Card className="h-full cursor-pointer rounded-2xl border-gray-300 shadow-sm transition-colors hover:bg-accent">
-                  <CardContent className="flex h-full flex-col items-center justify-center p-6">
-                    <card.icon className={`h-8 w-8 ${card.color} mb-2`} />
-                    <h3 className="text-center text-lg font-semibold">
-                      {card.title}
-                    </h3>
-                  </CardContent>
-                </Card>
-              </Link>
+              <Card className="flex h-[140px] flex-col justify-between rounded-2xl border-gray-200 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-lg font-thin">
+                    {card.title}
+                  </CardTitle>
+                  <card.icon className="h-5 w-5 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-4xl font-bold">{card.value}</div>
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
         </motion.div>
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold">Manage Services</h2>
+          <motion.div
+            className="grid gap-7 md:grid-cols-2 lg:grid-cols-4"
+            variants={containerVariants}
+          >
+            {manageOrderCards.map((card, index) => (
+              <motion.div
+                key={index}
+                variants={cardVariants}
+                whileHover="hover"
+                whileTap="tap"
+              >
+                <Link href={card.href} className="block h-[140px]">
+                  <Card className="h-full cursor-pointer rounded-2xl border-gray-200 shadow-sm transition-colors hover:bg-accent">
+                    <CardContent className="flex h-full flex-col items-center justify-center p-6">
+                      <card.icon className={`h-8 w-8 ${card.color} mb-2`} />
+                      <h3 className="text-center text-lg font-semibold">
+                        {card.title}
+                      </h3>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+        <div className="space-y-6">
+          <div className="flex items-center">
+            <h2 className="mr-2 text-xl font-semibold">
+              New Request Approval{" "}
+            </h2>
+            <Badge variant="default">4</Badge>
+          </div>
+          <DesktopDashboardOrders></DesktopDashboardOrders>
+        </div>
+      </div>
+      <div className="ml-2 space-y-8 border-l border-border pl-8">
+        <Card className="rounded-2xl border-gray-300 shadow-sm">
+          <CardHeader>
+            <span className="text-lg font-semibold">Today Requests</span>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {data.map((item, index) => (
+              <div key={index} className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-sm text-muted-foreground">
+                    {item.project}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {item.count}
+                  </span>
+                </div>
+                <div className="h-4 w-full overflow-hidden rounded-sm bg-muted">
+                  <motion.div
+                    className="h-full rounded-sm bg-primary"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(item.count / maxCount) * 100}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                  />
+                </div>
+              </div>
+            ))}
+            <div className="mt-2 flex justify-between text-sm text-muted-foreground">
+              <span>0</span>
+              <span>{Math.floor(maxCount / 2)}</span>
+              <span>{maxCount}</span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-gray-300 shadow-sm">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="text-lg font-semibold">New Requests</div>
+            <Link
+              href="/dashboard/all-orders"
+              className="ml-auto text-sm text-blue-500 hover:text-blue-700"
+            >
+              See All
+            </Link>
+          </div>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col gap-2">
+              {spaces.map((space, i) => (
+                <div
+                  key={i}
+                  className="flex cursor-pointer rounded-lg border p-4 hover:bg-accent"
+                >
+                  <div
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
+                      space.category === "meal_order"
+                        ? "bg-red-400"
+                        : space.category === "transport"
+                        ? "bg-blue-400"
+                        : "bg-green-400"
+                    }`}
+                  >
+                    <space.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">
+                        {space.category === "meal_order"
+                          ? "Meal Order"
+                          : space.category === "transport"
+                          ? "Transport"
+                          : "ATK"}
+                      </span>
+                      <span className="text-xs text-gray-400">08.09 WIB</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {space.subBidang}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </motion.div>
   );

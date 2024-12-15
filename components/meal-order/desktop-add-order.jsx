@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Check, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -64,6 +64,8 @@ export default function AddOrder() {
   });
   const [dropPoint, setDropPoint] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
+  const [picName, setPicName] = useState("");
+  const [picPhone, setPicPhone] = useState("");
 
   useEffect(() => {
     const newEmployees = { ...employees };
@@ -89,6 +91,8 @@ export default function AddOrder() {
       subBidang !== "" &&
       judulPekerjaan !== "" &&
       dropPoint !== "" &&
+      picName !== "" &&
+      picPhone !== "" &&
       Object.values(counts).some((count) => count > 0) &&
       Object.entries(counts).every(
         ([type, count]) =>
@@ -96,7 +100,15 @@ export default function AddOrder() {
           employees[type].every((emp) => emp.name !== "" && emp.menu !== "")
       );
     setIsFormValid(isValid);
-  }, [subBidang, judulPekerjaan, counts, employees, dropPoint]);
+  }, [
+    subBidang,
+    judulPekerjaan,
+    counts,
+    employees,
+    dropPoint,
+    picName,
+    picPhone,
+  ]);
 
   const handleCountChange = (type, value) => {
     setCounts((prev) => ({ ...prev, [type]: parseInt(value) || 0 }));
@@ -128,6 +140,8 @@ export default function AddOrder() {
           ])
         ),
         dropPoint,
+        picName,
+        picPhone,
       };
       console.log(submittedData);
       // Submit the form data
@@ -221,107 +235,207 @@ export default function AddOrder() {
   );
 
   return (
-    <div className="">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Add Order</h1>
         <Button onClick={() => router.back()} variant="outline">
           Back to Order List
         </Button>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="subBidang">Sub Bidang</Label>
-            <Select value={subBidang} onValueChange={setSubBidang}>
-              <SelectTrigger id="subBidang">
-                <SelectValue placeholder="Select Sub Bidang" />
-              </SelectTrigger>
-              <SelectContent>
-                {bidangOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="judulPekerjaan">Judul Pekerjaan</Label>
-            <Input
-              id="judulPekerjaan"
-              value={judulPekerjaan}
-              onChange={(e) => setJudulPekerjaan(e.target.value)}
-              placeholder="Enter judul pekerjaan"
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="dropPoint">Order</Label>
-            <Select value={zonaWaktu} onValueChange={setZonaWaktu}>
-              <SelectTrigger id="zonaWaktu">
-                <SelectValue placeholder="Select drop point" />
-              </SelectTrigger>
-              <SelectContent>
-                {zonaWaktuOrder.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="dropPoint">Drop Point</Label>
-            <Select value={dropPoint} onValueChange={setDropPoint}>
-              <SelectTrigger id="dropPoint">
-                <SelectValue placeholder="Select drop point" />
-              </SelectTrigger>
-              <SelectContent>
-                {dropPointOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:grid-cols-5">
-          {Object.entries(counts).map(([type, count]) => (
-            <div key={type}>
-              <Label htmlFor={`jumlah${type}`}>{`Jumlah ${type}`}</Label>
-              <Input
-                id={`jumlah${type}`}
-                type="number"
-                min="0"
-                value={count}
-                onChange={(e) => handleCountChange(type, e.target.value)}
-              />
-            </div>
-          ))}
-        </div>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-6">
-              {Object.entries(counts).map(([type, count], index) => (
-                <div key={type}>
-                  {renderEmployeeInputs(type, count)}
-                  {index < Object.entries(counts).length - 1 && (
-                    <Separator className="my-4" />
-                  )}
+      <div className="grid grid-cols-6 items-start gap-6">
+        {/* Input Section */}
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Order Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="subBidang">Sub Bidang</Label>
+                    <Select value={subBidang} onValueChange={setSubBidang}>
+                      <SelectTrigger id="subBidang">
+                        <SelectValue placeholder="Select Sub Bidang" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bidangOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="judulPekerjaan">Judul Pekerjaan</Label>
+                    <Input
+                      id="judulPekerjaan"
+                      value={judulPekerjaan}
+                      onChange={(e) => setJudulPekerjaan(e.target.value)}
+                      placeholder="Enter judul pekerjaan"
+                    />
+                  </div>
                 </div>
-              ))}
-            </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="zonaWaktu">Order</Label>
+                    <Select value={zonaWaktu} onValueChange={setZonaWaktu}>
+                      <SelectTrigger id="zonaWaktu">
+                        <SelectValue placeholder="Select Order" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {zonaWaktuOrder.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="dropPoint">Drop Point</Label>
+                    <Select value={dropPoint} onValueChange={setDropPoint}>
+                      <SelectTrigger id="dropPoint">
+                        <SelectValue placeholder="Select drop point" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dropPointOptions.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="picName">PIC Name</Label>
+                    <Input
+                      id="picName"
+                      value={picName}
+                      onChange={(e) => setPicName(e.target.value)}
+                      placeholder="Enter PIC name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="picPhone">PIC Phone Number</Label>
+                    <Input
+                      id="picPhone"
+                      value={picPhone}
+                      onChange={(e) => setPicPhone(e.target.value)}
+                      placeholder="Enter PIC phone number"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+                {Object.entries(counts).map(([type, count]) => (
+                  <div key={type}>
+                    <Label htmlFor={`jumlah${type}`}>{`Jumlah ${type}`}</Label>
+                    <Input
+                      id={`jumlah${type}`}
+                      type="number"
+                      min="0"
+                      value={count}
+                      onChange={(e) => handleCountChange(type, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    {Object.entries(counts).map(([type, count], index) => (
+                      <div key={type}>
+                        {renderEmployeeInputs(type, count)}
+                        {index < Object.entries(counts).length - 1 && (
+                          <Separator className="my-4" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              <Button type="submit" className="w-full" disabled={!isFormValid}>
+                Submit Order
+              </Button>
+            </form>
           </CardContent>
         </Card>
 
-        <Button type="submit" className="w-full" disabled={!isFormValid}>
-          Submit Order
-        </Button>
-      </form>
+        {/* Summary Section */}
+        <div className="col-span-2">
+          <Card className="sticky top-6">
+            <CardHeader>
+              <CardTitle>Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[calc(100vh-200px)] overflow-y-auto">
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <strong>Sub Bidang:</strong>
+                  <span>{subBidang || "Not selected"}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <strong>Judul Pekerjaan:</strong>
+                  <span>{judulPekerjaan || "Not entered"}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <strong>Order:</strong>
+                  <span>{zonaWaktu || "Not selected"}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <strong>Drop Point:</strong>
+                  <span>{dropPoint || "Not selected"}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <strong>PIC Name:</strong>
+                  <span>{picName || "Not entered"}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <strong>PIC Phone:</strong>
+                  <span>{picPhone || "Not entered"}</span>
+                </div>
+                <div className="space-y-2">
+                  <strong>Employee Counts:</strong>
+                  <ul className="grid grid-cols-2 gap-2">
+                    {Object.entries(counts).map(([type, count]) => (
+                      <li key={type} className="flex items-center gap-2">
+                        <span>•</span>
+                        {type}: {count}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="space-y-2">
+                  <strong>Employees:</strong>
+                  {Object.entries(employees).map(
+                    ([type, empList]) =>
+                      empList.length > 0 && (
+                        <div key={type} className="mt-3">
+                          <h4 className="mb-2 font-semibold">{type}</h4>
+                          <ul className="space-y-2">
+                            {empList.map((emp, index) => (
+                              <li
+                                key={index}
+                                className="flex items-center gap-2"
+                              >
+                                <span>•</span>
+                                {emp.name} - {emp.menu}{" "}
+                                {emp.note && `(${emp.note})`}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

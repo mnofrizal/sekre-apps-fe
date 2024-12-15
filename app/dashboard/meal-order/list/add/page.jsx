@@ -33,7 +33,12 @@ export default function AddOrderPage() {
           setIsFormValid={setIsFormValid}
         />
       ) : (
-        <DesktopAddOrder onBack={handleBack} setIsFormValid={setIsFormValid} />
+        <div className="p-6">
+          <DesktopAddOrder
+            onBack={handleBack}
+            setIsFormValid={setIsFormValid}
+          />
+        </div>
       )}
     </div>
   );
