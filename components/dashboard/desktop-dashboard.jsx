@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UtensilsCrossed, Car, Building2, FileBox } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Button } from "../ui/button";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20, scale: 0.8 },
@@ -65,7 +66,22 @@ export function DesktopDashboard() {
       variants={containerVariants}
     >
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">General Affairs Dashboard</h1>
+        <div className="space-y-1">
+          <h1 className="text-4xl font-medium tracking-tight">
+            Welcome back, Admin
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Here's an overview of your services activities
+          </p>
+        </div>
+        <Link href="/dashboard/all-orders">
+          <Button
+            size="lg"
+            className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Go to All Orders
+          </Button>
+        </Link>
       </div>
       <motion.div
         className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
@@ -78,7 +94,7 @@ export function DesktopDashboard() {
             whileHover="hover"
             whileTap="tap"
           >
-            <Card className="flex h-[140px] flex-col justify-between rounded-2xl border-gray-100 shadow-sm">
+            <Card className="flex h-[140px] flex-col justify-between rounded-2xl border-gray-300 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg font-thin">
                   {card.title}
@@ -106,7 +122,7 @@ export function DesktopDashboard() {
               whileTap="tap"
             >
               <Link href={card.href} className="block h-[140px]">
-                <Card className="h-full cursor-pointer rounded-2xl border-gray-100 shadow-sm transition-colors hover:bg-accent">
+                <Card className="h-full cursor-pointer rounded-2xl border-gray-300 shadow-sm transition-colors hover:bg-accent">
                   <CardContent className="flex h-full flex-col items-center justify-center p-6">
                     <card.icon className={`h-8 w-8 ${card.color} mb-2`} />
                     <h3 className="text-center text-lg font-semibold">

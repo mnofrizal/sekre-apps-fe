@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, MoreVertical, FileDown, Plus } from "lucide-react";
+import { Search, MoreVertical, FileDown, Plus, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,36 +21,43 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { OrderDetailDialog } from "./order-detail-dialog";
+import { Avatar, AvatarFallback } from "../ui/avatar";
 
 const orders = [
   {
-    id: "1",
-    subBidang: "IT",
+    id: "#HF4FY4",
+    subBidang: "Pemehliharaan 5-7",
     jumlah: 5,
     dropPoint: "Lobby",
     pic: "John Doe",
+    picPhone: "123-456-7890",
     kategori: "Makan Siang",
-    waktuOrder: "2023-06-10 12:30",
+    dateOrder: "2023-06-11",
+    timeOrder: " 08:15",
     status: "Pending",
   },
   {
-    id: "2",
-    subBidang: "HR",
+    id: "#HHF8Y4",
+    subBidang: "Fasilitas dan Sarana",
     jumlah: 3,
-    dropPoint: "Meeting Room A",
+    dropPoint: "Room A",
     pic: "Jane Smith",
+    picPhone: "123-456-7890",
     kategori: "Sarapan",
-    waktuOrder: "2023-06-11 08:15",
+    dateOrder: "2023-06-11",
+    timeOrder: " 08:15",
     status: "Completed",
   },
   {
-    id: "3",
-    subBidang: "Finance",
+    id: "#IL4FY3",
+    subBidang: "Pengadaan Barang dan Jasa 2",
     jumlah: 8,
     dropPoint: "Cafeteria",
     pic: "Bob Johnson",
+    picPhone: "123-456-7890",
     kategori: "Makan Malam",
-    waktuOrder: "2023-06-12 18:45",
+    dateOrder: "2023-06-11",
+    timeOrder: " 08:15",
     status: "In Progress",
   },
 ];
@@ -133,7 +140,7 @@ export function DesktopOrderList() {
           <TableBody>
             {filteredOrders.map((order) => (
               <TableRow key={order.id}>
-                <TableCell>
+                <TableCell className="p-7">
                   <button
                     onClick={() => handleOrderClick(order)}
                     className="text-primary hover:underline"
@@ -142,11 +149,41 @@ export function DesktopOrderList() {
                   </button>
                 </TableCell>
                 <TableCell>{order.subBidang}</TableCell>
-                <TableCell>{order.jumlah}</TableCell>
-                <TableCell>{order.dropPoint}</TableCell>
-                <TableCell>{order.pic}</TableCell>
+                <TableCell>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xl font-medium text-primary-foreground">
+                    {order.jumlah}
+                  </span>
+                </TableCell>
+
+                <TableCell>
+                  {" "}
+                  <Badge variant="outline" className="px-3 py-1">
+                    <MapPin className="mr-1 h-4 w-4" />
+                    {order.dropPoint}
+                  </Badge>
+                </TableCell>
+
+                <TableCell>
+                  {" "}
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback>{order.pic.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">{order.pic}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {order.picPhone}
+                      </div>
+                    </div>
+                  </div>
+                </TableCell>
                 <TableCell>{order.kategori}</TableCell>
-                <TableCell>{order.waktuOrder}</TableCell>
+                <TableCell>
+                  {order.dateOrder}{" "}
+                  <div className="text-xs text-muted-foreground">
+                    {order.timeOrder}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <Badge className={getStatusColor(order.status)}>
                     {order.status}

@@ -37,6 +37,7 @@ export default function MealOrderListPage() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
+          className="p-2"
         >
           <DesktopOrderList />
         </motion.div>
