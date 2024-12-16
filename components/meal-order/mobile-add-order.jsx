@@ -101,6 +101,59 @@ export default function MobileAddOrder({
     setIsFormValid(isValid);
   }, [subBidang, judulPekerjaan, counts, employees, dropPoint, setIsFormValid]);
 
+  const handleSubmit = () => {
+    // Create an object with all the form data
+    const formData = {
+      phone: "6287733760363",
+      zonaWaktu,
+      subBidang,
+      judulPekerjaan,
+      employeeCounts: counts,
+      employeeDetails: employees,
+      dropPoint,
+      totalEmployees: Object.values(counts).reduce((a, b) => a + b, 0),
+      timestamp: new Date().toISOString(),
+    };
+
+    // Log the complete form data
+    console.log("Form Submission Data:", formData);
+
+    // Log specific sections for easier debugging
+    console.log("Time Zone Selected:", zonaWaktu);
+    console.log("Department:", subBidang);
+    console.log("Job Title:", judulPekerjaan);
+    console.log("Employee Counts by Type:", counts);
+    console.log("Employee Details:", employees);
+    console.log("Drop Point:", dropPoint);
+
+    // Send data to API endpoint
+    // fetch("http://localhost:53r300/api/messages/send-meal", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify(formData),
+    // })
+    //   .then((response) => {
+    //     if (!response.ok) {
+    //       throw new Error("Network response was not ok");
+    //     }
+    //     return response.json();
+    //   })
+    //   .then((data) => {
+    //     console.log("Success:", data);
+    //     window.location.href = "/dashboard/meal-order/list/add/success";
+    //   })
+    //   .catch((error) => {
+    //     console.error("Error:", error);
+    //     // Handle error appropriately
+    //   });
+
+    // Proceed with the navigation
+
+    window.location.href = "/dashboard/meal-order/list/add/success";
+  };
+
   const handleCountChange = (type, value) => {
     setCounts((prev) => ({ ...prev, [type]: value }));
   };
@@ -294,16 +347,12 @@ export default function MobileAddOrder({
         </div>
       </div>
 
-      {/* Fixed Add Order Button */}
+      {/* Updated Submit Button */}
       <div className="fixed bottom-0 left-0 right-0 border-t bg-background p-4">
         <Button
           className="h-12 w-full rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b]"
           size="lg"
-          onClick={() => {
-            // Here you would typically handle the form submission
-            // For now, we'll just redirect to the success page
-            window.location.href = "/dashboard/meal-order/list/add/success";
-          }}
+          onClick={handleSubmit}
         >
           Submit
         </Button>
