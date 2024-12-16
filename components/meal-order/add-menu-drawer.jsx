@@ -60,7 +60,7 @@ export function AddMenuDrawer({
           <div className="h-full w-full cursor-pointer">{children}</div>
         ) : (
           <Button
-            className="w-full bg-[#0f172a] text-white hover:bg-[#1e293b]"
+            className="h-12 w-full rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b]"
             size="lg"
           >
             Add Menu

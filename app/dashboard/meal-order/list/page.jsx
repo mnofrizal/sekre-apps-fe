@@ -27,6 +27,7 @@ export default function MealOrderListPage() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
+          className="py-4"
         >
           <MobileOrderList />
         </motion.div>

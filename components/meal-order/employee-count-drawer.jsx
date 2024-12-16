@@ -37,7 +37,10 @@ export function EmployeeCountDrawer({ counts, onCountChange }) {
   return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button variant="outline" className="w-full justify-start">
+        <Button
+          variant="outline"
+          className="h-12 w-full justify-start rounded-xl"
+        >
           <span className="text-left">{getEmployeeCountText()}</span>
         </Button>
       </DrawerTrigger>

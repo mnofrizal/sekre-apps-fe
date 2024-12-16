@@ -25,7 +25,7 @@ export default function AddOrderPage() {
   };
 
   return (
-    <div>
+    <div className="py-4">
       {isMobile ? (
         <MobileAddOrder
           onBack={handleBack}

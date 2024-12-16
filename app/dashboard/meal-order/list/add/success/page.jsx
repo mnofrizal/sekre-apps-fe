@@ -10,7 +10,7 @@ export default function SuccessSubmitPage() {
   const router = useRouter();
 
   const handleBackToList = () => {
-    router.push("/dashboard/meal-order/list");
+    router.push("/dashboard/");
   };
 
   return (
@@ -48,13 +48,16 @@ export default function SuccessSubmitPage() {
             </div>
             <Button
               onClick={handleBackToList}
-              className="mb-3 w-full"
+              className="mb-3 h-12 w-full rounded-xl"
               variant="outline"
             >
               Share
             </Button>
-            <Button onClick={handleBackToList} className="w-full">
-              Back to Order List
+            <Button
+              onClick={handleBackToList}
+              className="h-12 w-full rounded-xl"
+            >
+              Back to Dashboard
             </Button>
           </CardContent>
         </div>

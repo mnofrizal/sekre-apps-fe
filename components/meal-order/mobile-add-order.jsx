@@ -150,6 +150,7 @@ export default function MobileAddOrder({
                   onChange={(e) =>
                     handleEmployeeChange(type, index, "name", e.target.value)
                   }
+                  className="rounded-xl"
                 />
               )}
               <Select
@@ -175,6 +176,7 @@ export default function MobileAddOrder({
                 onChange={(e) =>
                   handleEmployeeChange(type, index, "note", e.target.value)
                 }
+                className="rounded-xl"
               />
             </div>
           ))}
@@ -185,10 +187,19 @@ export default function MobileAddOrder({
 
   return (
     <div className="flex h-screen flex-col">
-      <div className="space-y-6 p-4">
+      <div className="space-y-2 pb-28">
         <div>
+          <Label
+            className="pl-1 text-xs font-light text-muted-foreground"
+            htmlFor="zonaWaktu"
+          >
+            Pilih Waktu
+          </Label>
           <Select value={zonaWaktu} onValueChange={setZonaWaktu}>
-            <SelectTrigger id="zonaWaktu" className="mt-1 w-full">
+            <SelectTrigger
+              id="zonaWaktu"
+              className="mt-1 h-12 w-full rounded-xl"
+            >
               <SelectValue placeholder="Pilih Waktu" />
             </SelectTrigger>
             <SelectContent>
@@ -201,8 +212,17 @@ export default function MobileAddOrder({
           </Select>
         </div>
         <div>
+          <Label
+            className="pl-1 text-xs font-light text-muted-foreground"
+            htmlFor="subBidang"
+          >
+            Pilih Sub Bidang
+          </Label>
           <Select value={subBidang} onValueChange={setSubBidang}>
-            <SelectTrigger id="subBidang" className="mt-1 w-full">
+            <SelectTrigger
+              id="subBidang"
+              className="mt-1 h-12 w-full rounded-xl"
+            >
               <SelectValue placeholder="Pilih Sub Bidang" />
             </SelectTrigger>
             <SelectContent>
@@ -216,26 +236,44 @@ export default function MobileAddOrder({
         </div>
 
         <div>
+          <Label
+            className="pl-1 text-xs font-light text-muted-foreground"
+            htmlFor="judulPekerjaan"
+          >
+            Judul Pekerjaan
+          </Label>
           <Input
             id="judulPekerjaan"
             value={judulPekerjaan}
             onChange={(e) => setJudulPekerjaan(e.target.value)}
             placeholder="Judul Pekerjaan"
-            className="mt-1 w-full"
+            className="mt-1 h-12 w-full rounded-xl"
           />
         </div>
 
         <div>
           <div className="mt-1">
+            <Label
+              className="pl-1 text-xs font-light text-muted-foreground"
+              htmlFor="subBidang"
+            >
+              Pilih Pemesan
+            </Label>
             <EmployeeCountDrawer
               counts={counts}
               onCountChange={handleCountChange}
             />
           </div>
         </div>
-        <div>
+        <div className="pb-2">
+          <Label className="text-xs text-muted-foreground" htmlFor="dropPoint">
+            Pilih Drop Point
+          </Label>
           <Select value={dropPoint} onValueChange={setDropPoint}>
-            <SelectTrigger id="dropPoint" className="mt-1 w-full">
+            <SelectTrigger
+              id="dropPoint"
+              className="mt-1 h-12 w-full rounded-xl"
+            >
               <SelectValue placeholder="Pilih Drop Point" />
             </SelectTrigger>
             <SelectContent>
@@ -250,7 +288,7 @@ export default function MobileAddOrder({
 
         <Separator />
 
-        <div className="space-y-4">
+        <div className="space-y-4 pt-2">
           <h2 className="text-lg font-semibold">Employee Details</h2>
           {employeeTypes.map((type) => renderEmployeeInputs(type))}
         </div>
@@ -259,7 +297,7 @@ export default function MobileAddOrder({
       {/* Fixed Add Order Button */}
       <div className="fixed bottom-0 left-0 right-0 border-t bg-background p-4">
         <Button
-          className="w-full bg-[#0f172a] text-white hover:bg-[#1e293b]"
+          className="h-12 w-full rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b]"
           size="lg"
           onClick={() => {
             // Here you would typically handle the form submission

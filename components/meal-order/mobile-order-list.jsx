@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,20 @@ const initialMenuItems = [
   { id: 3, name: "Gado-gado", category: "Makan Berat", isAvailable: false },
   { id: 4, name: "Rendang", category: "Makan Berat", isAvailable: true },
   { id: 5, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 6, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 7, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 8, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 9, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 10, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 11, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 12, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 13, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 14, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 15, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 16, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 17, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 18, name: "Pisang Goreng", category: "Snack", isAvailable: true },
+  { id: 19, name: "Pisang Goreng", category: "Snack", isAvailable: true },
 ];
 
 export function MobileOrderList() {
@@ -69,24 +83,46 @@ export function MobileOrderList() {
   };
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-4 pb-14">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="order">Order</TabsTrigger>
-          <TabsTrigger value="menu">Menu</TabsTrigger>
+        <TabsList className="grid h-12 w-full grid-cols-2">
+          <TabsTrigger className="h-9" value="order">
+            Order
+          </TabsTrigger>
+          <TabsTrigger className="h-9" value="menu">
+            Menu
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="order" className="mt-4">
+        <TabsContent value="order" className="mt-0">
           {/* Search Box for Orders */}
-          <div className="sticky top-14 z-10 -mx-4 bg-background px-4 py-3">
+          <div className="sticky top-14 z-10 -mx-4 bg-background px-4 py-3 pb-4">
+            {" "}
+            {/* Increased padding for more height */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search orders..."
-                className="pl-9"
+                className="h-12 pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 items-center justify-between"
+              >
+                Sort & Filter
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 items-center justify-between"
+              >
+                Date
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
 
@@ -171,17 +207,33 @@ export function MobileOrderList() {
           </div>
         </TabsContent>
 
-        <TabsContent value="menu" className="mt-4">
+        <TabsContent value="menu" className="mt-0">
           {/* Search Box for Menu */}
-          <div className="sticky top-14 z-10 -mx-4 bg-background px-4 py-3">
+          <div className="sticky top-14 z-10 -mx-4 bg-background px-4 py-3 pb-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search menu items..."
-                className="pl-9"
+                className="h-12 pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 items-center justify-between"
+              >
+                Sort & Filter
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 items-center justify-between"
+              >
+                Date
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
 
@@ -218,7 +270,7 @@ export function MobileOrderList() {
         {activeTab === "order" ? (
           <Link href="/dashboard/meal-order/list/add">
             <Button
-              className="w-full bg-[#0f172a] text-white hover:bg-[#1e293b]"
+              className="h-12 w-full rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b]"
               size="lg"
             >
               <Plus className="mr-2 h-5 w-5" />

@@ -16,7 +16,7 @@ export function BackHeader({ title }) {
           className="text-white hover:text-white/90"
           onClick={() => router.back()}
         >
-          <ArrowLeft className="h-6 w-6" />
+          <ArrowLeft className="h-8 w-8" />
         </Button>
         <h1 className="mr-12 flex-1 text-center text-lg font-semibold">
           {title}
