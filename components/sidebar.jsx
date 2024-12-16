@@ -25,6 +25,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 const menuItems = [
   {
@@ -224,6 +225,9 @@ function MenuItem({ item, isActive, level = 0 }) {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  if (!session?.user) return null;
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -260,8 +264,11 @@ export default function Sidebar() {
             <AvatarFallback>JD</AvatarFallback>
           </Avatar>
           <div>
-            <div className="font-medium">John Doe</div>
-            <div className="text-sm text-muted-foreground">Admin</div>
+            <div className="font-medium"> {session.user.name}</div>
+            <div className="text-sm text-muted-foreground">
+              {" "}
+              {session.user.role}
+            </div>
           </div>
         </div>
       </div>

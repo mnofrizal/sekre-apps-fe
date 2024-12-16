@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { DesktopDashboardOrders } from "./desktop-dashboard-order-list";
 import { Badge } from "../ui/badge";
+import { useSession } from "next-auth/react";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20, scale: 0.8 },
@@ -33,6 +34,10 @@ const data = [
 ];
 
 export function DesktopDashboard() {
+  const { data: session } = useSession();
+
+  if (!session?.user) return null;
+
   const maxCount = Math.max(...data.map((item) => item.count));
   const statisticsCards = [
     { title: "Total Meal Orders", value: "24", icon: UtensilsCrossed },
@@ -84,7 +89,7 @@ export function DesktopDashboard() {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h1 className="text-4xl font-medium tracking-tight">
-              Selamat siang, Admin
+              Selamat siang, {session.user.name}
             </h1>
             <p className="text-lg text-muted-foreground">
               Berikut ringkasan aktivitas layanan Anda
