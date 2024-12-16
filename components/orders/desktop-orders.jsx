@@ -117,7 +117,7 @@ export function DesktopOrders() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">All Orders</h1>
+      <h1 className="text-3xl font-bold">Semua Permintaan</h1>
       <Tabs defaultValue="all" onValueChange={setActiveTab}>
         <TabsList>
           {Object.entries(orderTypes).map(([key, { label }]) => (

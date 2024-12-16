@@ -26,19 +26,19 @@ const containerVariants = {
 };
 
 const data = [
-  { project: "Meal", count: 95 },
-  { project: "Transport", count: 88 },
-  { project: "Room", count: 76 },
-  { project: "ATK", count: 45 },
+  { project: "Meal", count: 36 },
+  { project: "Transport", count: 0 },
+  { project: "Room", count: 0 },
+  { project: "ATK", count: 0 },
 ];
 
 export function DesktopDashboard() {
   const maxCount = Math.max(...data.map((item) => item.count));
   const statisticsCards = [
     { title: "Total Meal Orders", value: "24", icon: UtensilsCrossed },
-    { title: "Transport Requests", value: "12", icon: Car },
-    { title: "Room Bookings", value: "8", icon: Building2 },
-    { title: "Stationary Requests", value: "32", icon: FileBox },
+    { title: "Transport Requests", value: "0", icon: Car },
+    { title: "Room Bookings", value: "0", icon: Building2 },
+    { title: "Stationary Requests", value: "0", icon: FileBox },
   ];
 
   const manageOrderCards = [
@@ -84,10 +84,10 @@ export function DesktopDashboard() {
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h1 className="text-4xl font-medium tracking-tight">
-              Welcome back, Admin
+              Selamat siang, Admin
             </h1>
             <p className="text-lg text-muted-foreground">
-              Here's an overview of your services activities
+              Berikut ringkasan aktivitas layanan Anda
             </p>
           </div>
           <Link href="/dashboard/all-orders">
@@ -125,7 +125,7 @@ export function DesktopDashboard() {
           ))}
         </motion.div>
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold">Manage Services</h2>
+          <h2 className="text-xl font-semibold">Kelola Layanan</h2>
           <motion.div
             className="grid gap-7 md:grid-cols-2 lg:grid-cols-4"
             variants={containerVariants}
@@ -152,11 +152,17 @@ export function DesktopDashboard() {
           </motion.div>
         </div>
         <div className="space-y-6">
-          <div className="flex items-center">
-            <h2 className="mr-2 text-xl font-semibold">
-              New Request Approval{" "}
-            </h2>
-            <Badge variant="default">4</Badge>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <h2 className="mr-2 text-xl font-semibold">Kelola Persutujuan</h2>
+              <Badge variant="default">4</Badge>
+            </div>
+            <Link
+              href="/dashboard/all-orders"
+              className="ml-auto text-sm text-blue-500 hover:text-blue-700"
+            >
+              See All
+            </Link>
           </div>
           <DesktopDashboardOrders></DesktopDashboardOrders>
         </div>
@@ -164,7 +170,7 @@ export function DesktopDashboard() {
       <div className="ml-2 space-y-8 border-l border-border pl-8">
         <Card className="rounded-2xl border-gray-300 shadow-sm">
           <CardHeader>
-            <span className="text-lg font-semibold">Today Requests</span>
+            <span className="text-lg font-semibold">Permintaan Hari ini</span>
           </CardHeader>
           <CardContent className="space-y-4">
             {data.map((item, index) => (
@@ -196,7 +202,7 @@ export function DesktopDashboard() {
         </Card>
         <Card className="rounded-2xl border-gray-300 shadow-sm">
           <div className="flex items-center justify-between px-6 py-4">
-            <div className="text-lg font-semibold">New Requests</div>
+            <div className="text-lg font-semibold">Permintaan Baru</div>
             <Link
               href="/dashboard/all-orders"
               className="ml-auto text-sm text-blue-500 hover:text-blue-700"

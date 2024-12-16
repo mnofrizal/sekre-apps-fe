@@ -87,7 +87,9 @@ export function MobileDashboard() {
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             Hi, Admin <span className="wave">👋</span>
           </h1>
-          <p className="text-muted-foreground">Welcome to General Affairs</p>
+          <p className="text-muted-foreground">
+            Welcome to General Affairs Suralaya
+          </p>
         </div>
         <Avatar>
           <AvatarImage src="/avatar.png" alt="User Avatar" />
@@ -109,7 +111,7 @@ export function MobileDashboard() {
       {/* Categories */}
       <motion.div variants={itemVariants} className="">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Categories</h2>
+          <h2 className="text-lg font-semibold">Layanan</h2>
           <Link href="/dashboard/" className="text-sm text-blue-600">
             See all
           </Link>
@@ -136,7 +138,7 @@ export function MobileDashboard() {
       {/* Today's Stats */}
       <motion.div variants={itemVariants} className="">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Today's Stats</h2>
+          <h2 className="text-lg font-semibold">Permintaan hari ini</h2>
           <Link href="/dashboard/" className="text-sm text-blue-600">
             View Report
           </Link>

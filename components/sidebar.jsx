@@ -41,7 +41,7 @@ const menuItems = [
   },
   {
     type: "segment",
-    title: "Services",
+    title: "Layanan",
     items: [
       {
         title: "Meal Orders",
