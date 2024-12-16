@@ -14,13 +14,13 @@ export default function SuccessSubmitPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center bg-background p-4">
+    <div className="flex flex-col items-center justify-center bg-background py-4">
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="mx-auto w-full max-w-md">
+        <div className="mx-auto w-full max-w-md rounded-2xl border border-gray-200 shadow-sm">
           <CardContent className="flex flex-col items-center p-6">
             <CheckCircle className="mb-4 h-16 w-16 text-green-500" />
             <h1 className="mb-2 text-center text-2xl font-bold">
