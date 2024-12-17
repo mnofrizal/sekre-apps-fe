@@ -24,7 +24,15 @@ const handler = NextAuth({
 
           const data = await response.json();
 
+          if (!response.ok) {
+            throw new Error(data.message || "Invalid credentials");
+          }
+
           const { user, accessToken } = data.data;
+
+          if (!user || !accessToken) {
+            throw new Error("Invalid response from server");
+          }
 
           return {
             id: user.id,

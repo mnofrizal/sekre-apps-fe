@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,34 +15,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Check, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { getSubBidangEmployees } from "@/lib/api/employees";
+import { getMenuItems } from "@/lib/api/menu";
 
-// Sample data for dropdowns
 const zonaWaktuOrder = ["Sarapan", "Makan Siang", "Makan Sore", "Makan Malam"];
-const bidangOptions = ["IT", "HR", "Finance", "Marketing", "Operations"];
-const menuOptions = [
-  "Nasi Goreng",
-  "Mie Ayam",
-  "Soto Ayam",
-  "Gado-gado",
-  "Rendang",
-];
-const dropPointOptions = [
-  "Lobby",
-  "Cafeteria",
-  "Meeting Room A",
-  "Meeting Room B",
-  "Office Floor 2",
-];
-
-// Sample data for PLNIP names (you would replace this with actual data)
-const plnipNames = {
-  IT: ["John Doe", "Jane Smith", "Bob Johnson"],
-  HR: ["Alice Brown", "Charlie Davis", "Eva White"],
-  Finance: ["Frank Miller", "Grace Lee", "Henry Clark"],
-  Marketing: ["Ivy Chen", "Jack Wilson", "Karen Taylor"],
-  Operations: ["Liam Harris", "Mia Rodriguez", "Noah Martinez"],
-};
 
 export default function AddOrder() {
   const router = useRouter();
@@ -66,6 +43,61 @@ export default function AddOrder() {
   const [isFormValid, setIsFormValid] = useState(false);
   const [picName, setPicName] = useState("");
   const [picPhone, setPicPhone] = useState("");
+
+  // State for dynamic data
+  const [plnipNames, setPlnipNames] = useState({});
+  const [bidangOptions, setBidangOptions] = useState([]);
+  const [menuOptions, setMenuOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // New state for asman
+  const [asman, setAsman] = useState({
+    name: "",
+    subBidang: "",
+    nomorHp: "",
+  });
+
+  // Fetch dynamic data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch sub bidang employees
+        const subBidangResponse = await getSubBidangEmployees();
+        setPlnipNames(subBidangResponse.data);
+        setBidangOptions(Object.keys(subBidangResponse.data));
+
+        // Fetch menu items - store full menu item objects
+        const menuResponse = await getMenuItems();
+        setMenuOptions(menuResponse.data.filter((item) => item.isAvailable));
+      } catch (err) {
+        setError(err.message);
+        console.error("Error fetching data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Update asman when subBidang changes
+  useEffect(() => {
+    if (subBidang && plnipNames[subBidang]) {
+      const asmanEmployee = plnipNames[subBidang].find((emp) => emp.isAsman);
+      if (asmanEmployee) {
+        setAsman({
+          name: asmanEmployee.name,
+          subBidang: subBidang,
+          nomorHp: asmanEmployee.nomorHp,
+        });
+      } else {
+        setAsman({ name: "", subBidang: "", nomorHp: "" });
+      }
+    }
+  }, [subBidang, plnipNames]);
 
   useEffect(() => {
     const newEmployees = { ...employees };
@@ -110,44 +142,45 @@ export default function AddOrder() {
     picPhone,
   ]);
 
+  if (loading) {
+    return (
+      <div className="flex h-[200px] items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-[200px] items-center justify-center text-red-500">
+        Error: {error}
+      </div>
+    );
+  }
+
   const handleCountChange = (type, value) => {
     setCounts((prev) => ({ ...prev, [type]: parseInt(value) || 0 }));
   };
 
   const handleEmployeeChange = (type, index, field, value) => {
     const updatedEmployees = { ...employees };
-    updatedEmployees[type][index] = {
-      ...updatedEmployees[type][index],
-      [field]: value,
-    };
+    if (field === "menu") {
+      // Find the full menu item object
+      const menuItem = menuOptions.find((item) => item.id === value);
+      updatedEmployees[type][index] = {
+        ...updatedEmployees[type][index],
+        menu: menuItem, // Store the full menu item object
+      };
+    } else {
+      updatedEmployees[type][index] = {
+        ...updatedEmployees[type][index],
+        [field]: value,
+      };
+    }
     setEmployees(updatedEmployees);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (isFormValid) {
-      const submittedData = {
-        subBidang,
-        judulPekerjaan,
-        employees: Object.fromEntries(
-          Object.entries(employees).map(([type, empList]) => [
-            type,
-            empList.map((emp) => ({
-              name: emp.name,
-              menu: emp.menu,
-              note: emp.note || undefined,
-            })),
-          ])
-        ),
-        dropPoint,
-        picName,
-        picPhone,
-      };
-      console.log(submittedData);
-      // Submit the form data
-    }
-  };
-
+  // Update the renderEmployeeInputs function to handle menu selection with IDs
   const renderEmployeeInputs = (type, count) => (
     <div key={type} className="space-y-4">
       <div className="flex items-center space-x-2">
@@ -180,9 +213,9 @@ export default function AddOrder() {
                     <SelectValue placeholder="Select name" />
                   </SelectTrigger>
                   <SelectContent>
-                    {plnipNames[subBidang]?.map((name) => (
-                      <SelectItem key={name} value={name}>
-                        {name}
+                    {plnipNames[subBidang]?.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.name}>
+                        {emp.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -201,7 +234,7 @@ export default function AddOrder() {
             <div>
               <Label htmlFor={`${type}Menu${index}`}>Menu</Label>
               <Select
-                value={employees[type][index]?.menu || ""}
+                value={employees[type][index]?.menu?.id || ""}
                 onValueChange={(value) =>
                   handleEmployeeChange(type, index, "menu", value)
                 }
@@ -210,9 +243,9 @@ export default function AddOrder() {
                   <SelectValue placeholder="Select menu" />
                 </SelectTrigger>
                 <SelectContent>
-                  {menuOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
+                  {menuOptions.map((menuItem) => (
+                    <SelectItem key={menuItem.id} value={menuItem.id}>
+                      {menuItem.name} ({menuItem.category})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -233,6 +266,48 @@ export default function AddOrder() {
         ))}
     </div>
   );
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isFormValid) {
+      try {
+        const submittedData = {
+          judulPekerjaan,
+          type: "MEAL",
+          dropPoint,
+          subBidang,
+          supervisor: {
+            name: asman.name,
+            subBidang: asman.subBidang,
+            nomorHp: asman.nomorHp,
+          },
+          pic: {
+            name: picName,
+            nomorHp: picPhone,
+          },
+          employeeOrders: Object.entries(employees).flatMap(([type, empList]) =>
+            empList.map((emp) => ({
+              employeeName: emp.name,
+              entity: type,
+              items: [
+                {
+                  menuItemId: emp.menu.id,
+                  quantity: 1,
+                  notes: emp.note || undefined,
+                },
+              ],
+            }))
+          ),
+        };
+
+        await createOrder(submittedData);
+        router.push("/dashboard/meal-order/list/");
+      } catch (error) {
+        console.error("Error submitting order:", error);
+        // Handle error appropriately
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -295,18 +370,12 @@ export default function AddOrder() {
                   </div>
                   <div>
                     <Label htmlFor="dropPoint">Drop Point</Label>
-                    <Select value={dropPoint} onValueChange={setDropPoint}>
-                      <SelectTrigger id="dropPoint">
-                        <SelectValue placeholder="Select drop point" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {dropPointOptions.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="dropPoint"
+                      value={dropPoint}
+                      onChange={(e) => setDropPoint(e.target.value)}
+                      placeholder="Enter Droppoint"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -422,7 +491,7 @@ export default function AddOrder() {
                                 className="flex items-center gap-2"
                               >
                                 <span>•</span>
-                                {emp.name} - {emp.menu}{" "}
+                                {emp.name} - {emp.menu?.name || ""}{" "}
                                 {emp.note && `(${emp.note})`}
                               </li>
                             ))}
