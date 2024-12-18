@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Search,
   MoreVertical,
@@ -37,60 +37,50 @@ import {
 import Link from "next/link";
 import { OrderDetailDialog } from "./order-detail-dialog";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-
-const orders = [
-  {
-    id: "#HF4FY4",
-    subBidang: "Pemehliharaan 5-7",
-    jumlah: 5,
-    dropPoint: "Lobby",
-    pic: "John Doe",
-    picPhone: "123-456-7890",
-    kategori: "Makan Siang",
-    dateOrder: "2023-06-11",
-    timeOrder: " 08:15",
-    status: "Pending",
-  },
-  {
-    id: "#HHF8Y4",
-    subBidang: "Fasilitas dan Sarana",
-    jumlah: 3,
-    dropPoint: "Room A",
-    pic: "Jane Smith",
-    picPhone: "123-456-7890",
-    kategori: "Sarapan",
-    dateOrder: "2023-06-11",
-    timeOrder: " 08:15",
-    status: "Completed",
-  },
-  {
-    id: "#IL4FY3",
-    subBidang: "Pengadaan Barang dan Jasa 2",
-    jumlah: 8,
-    dropPoint: "Cafeteria",
-    pic: "Bob Johnson",
-    picPhone: "123-456-7890",
-    kategori: "Makan Malam",
-    dateOrder: "2023-06-11",
-    timeOrder: " 08:15",
-    status: "In Progress",
-  },
-];
+import { getAllOrders } from "@/lib/api/order";
+import { format } from "date-fns";
 
 const getStatusColor = (status) => {
   switch (status) {
-    case "Pending":
+    case "PENDING_SUPERVISOR":
       return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-    case "Completed":
+    case "APPROVED":
       return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-    case "In Progress":
+    case "REJECTED":
+      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+    case "IN_PROGRESS":
       return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
     default:
       return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
   }
 };
 
+const zonaWaktuOrder = [
+  { name: "Sarapan", time: "06:00:00.000Z" },
+  { name: "Makan Siang", time: "12:00:00.000Z" },
+  { name: "Makan Sore", time: "16:00:00.000Z" },
+  { name: "Makan Malam", time: "19:00:00.000Z" },
+];
+
+const getMealCategory = (date) => {
+  const hours = new Date(date).getHours();
+
+  if (hours >= 6 && hours < 12) {
+    return "Sarapan";
+  } else if (hours >= 12 && hours < 16) {
+    return "Makan Siang";
+  } else if (hours >= 16 && hours < 19) {
+    return "Makan Sore";
+  } else if (hours >= 19 || hours < 6) {
+    return "Makan Malam";
+  }
+  return ""; // fallback
+};
+
 export function DesktopOrderList() {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -103,25 +93,58 @@ export function DesktopOrderList() {
     direction: "ascending",
   });
 
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllOrders();
+      setOrders(response.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredOrders = useMemo(() => {
     return orders.filter(
       (order) =>
-        (order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.pic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          order.subBidang.toLowerCase().includes(searchQuery.toLowerCase())) &&
+        (order.judulPekerjaan
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+          order.supervisor.name
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          order.supervisor.subBidang
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase())) &&
         (statusFilter === "All" || order.status === statusFilter) &&
-        (subBidangFilter === "All" || order.subBidang === subBidangFilter)
+        (subBidangFilter === "All" ||
+          order.supervisor.subBidang === subBidangFilter)
     );
-  }, [searchQuery, statusFilter, subBidangFilter]);
+  }, [orders, searchQuery, statusFilter, subBidangFilter]);
 
   const sortedOrders = useMemo(() => {
     let sortableOrders = [...filteredOrders];
     if (sortConfig.key !== null) {
       sortableOrders.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // Handle nested properties
+        if (sortConfig.key.includes(".")) {
+          const keys = sortConfig.key.split(".");
+          aValue = keys.reduce((obj, key) => obj?.[key], a);
+          bValue = keys.reduce((obj, key) => obj?.[key], b);
+        }
+
+        if (aValue < bValue) {
           return sortConfig.direction === "ascending" ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
+        if (aValue > bValue) {
           return sortConfig.direction === "ascending" ? 1 : -1;
         }
         return 0;
@@ -144,8 +167,6 @@ export function DesktopOrderList() {
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
-
   const requestSort = (key) => {
     let direction = "ascending";
     if (sortConfig.key === key && sortConfig.direction === "ascending") {
@@ -153,6 +174,22 @@ export function DesktopOrderList() {
     }
     setSortConfig({ key, direction });
   };
+
+  if (error) {
+    return (
+      <div className="flex h-[200px] items-center justify-center text-red-500">
+        Error: {error}
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-[200px] items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
 
   const SortableTableHeader = ({ children, sortKey }) => {
     return (
@@ -207,24 +244,9 @@ export function DesktopOrderList() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="All">All Statuses</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Completed">Completed</SelectItem>
-            <SelectItem value="In Progress">In Progress</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={subBidangFilter} onValueChange={setSubBidangFilter}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter by Sub Bidang" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="All">All Sub Bidang</SelectItem>
-            <SelectItem value="Pemehliharaan 5-7">Pemehliharaan 5-7</SelectItem>
-            <SelectItem value="Fasilitas dan Sarana">
-              Fasilitas dan Sarana
-            </SelectItem>
-            <SelectItem value="Pengadaan Barang dan Jasa 2">
-              Pengadaan Barang dan Jasa 2
-            </SelectItem>
+            <SelectItem value="PENDING_SUPERVISOR">Pending</SelectItem>
+            <SelectItem value="APPROVED">Approved</SelectItem>
+            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -234,19 +256,19 @@ export function DesktopOrderList() {
           <TableHeader>
             <TableRow className="rounded-2xl border-b bg-slate-100">
               <SortableTableHeader sortKey="id">Order ID</SortableTableHeader>
-              <SortableTableHeader sortKey="subBidang">
+              <SortableTableHeader sortKey="supervisor.subBidang">
                 Sub Bidang
               </SortableTableHeader>
-              <SortableTableHeader sortKey="jumlah">Jumlah</SortableTableHeader>
+              <SortableTableHeader sortKey="employeeOrders">
+                Jumlah
+              </SortableTableHeader>
               <SortableTableHeader sortKey="dropPoint">
                 Drop Point
               </SortableTableHeader>
-              <SortableTableHeader sortKey="pic">PIC</SortableTableHeader>
-              <SortableTableHeader sortKey="kategori">
-                Kategori
-              </SortableTableHeader>
-              <SortableTableHeader sortKey="dateOrder">
-                Waktu Order
+              <SortableTableHeader sortKey="pic.name">PIC</SortableTableHeader>
+              <SortableTableHeader sortKey="type">Kategori</SortableTableHeader>
+              <SortableTableHeader sortKey="requestDate">
+                Request Date
               </SortableTableHeader>
               <SortableTableHeader sortKey="status">Status</SortableTableHeader>
               <TableHead className="text-right">Actions</TableHead>
@@ -260,39 +282,45 @@ export function DesktopOrderList() {
                     onClick={() => handleOrderClick(order)}
                     className="text-primary hover:underline"
                   >
-                    {order.id}
+                    {order.id.slice(0, 8)}
                   </button>
                 </TableCell>
-                <TableCell>{order.subBidang}</TableCell>
+                <TableCell>{order.supervisor.subBidang}</TableCell>
                 <TableCell>
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xl font-medium text-primary-foreground">
-                    {order.jumlah}
+                    {order.employeeOrders.length}
                   </span>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="px-3 py-1">
+                  <div className="flex items-center justify-center rounded-lg border px-1 py-1">
                     <MapPin className="mr-1 h-4 w-4" />
                     {order.dropPoint}
-                  </Badge>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9">
-                      <AvatarFallback>{order.pic.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>
+                        {order.pic.name.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium">{order.pic}</div>
+                      <div className="font-medium">{order.pic.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {order.picPhone}
+                        {order.pic.nomorHp}
                       </div>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{order.kategori}</TableCell>
                 <TableCell>
-                  {order.dateOrder}{" "}
+                  <div className="rounded-lg border px-1 py-1 text-center">
+                    {getMealCategory(order.requiredDate)}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {format(new Date(order.requestDate), "dd MMM yyyy")}
                   <div className="text-xs text-muted-foreground">
-                    {order.timeOrder}
+                    {format(new Date(order.requestDate), "HH:mm")}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -357,9 +385,16 @@ export function DesktopOrderList() {
             variant="outline"
             size="sm"
             onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              setCurrentPage((prev) =>
+                Math.min(
+                  prev + 1,
+                  Math.ceil(sortedOrders.length / itemsPerPage)
+                )
+              )
             }
-            disabled={currentPage === totalPages}
+            disabled={
+              currentPage === Math.ceil(sortedOrders.length / itemsPerPage)
+            }
           >
             Next
           </Button>

@@ -14,35 +14,19 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmployeeCountDrawer } from "./employee-count-drawer";
 import Link from "next/link";
+import { getSubBidangEmployees } from "@/lib/api/employees";
+import { getMenuItems } from "@/lib/api/menu";
+import { createOrder } from "@/lib/api/order";
 
 // Sample data for dropdowns
-const zonaWaktuOrder = ["Sarapan", "Makan Siang", "Makan Sore", "Makan Malam"];
-const bidangOptions = ["IT", "HR", "Finance", "Marketing", "Operations"];
-const menuOptions = [
-  "Nasi Goreng",
-  "Mie Ayam",
-  "Soto Ayam",
-  "Gado-gado",
-  "Rendang",
-];
-const dropPointOptions = [
-  "Lobby",
-  "Cafeteria",
-  "Meeting Room A",
-  "Meeting Room B",
-  "Office Floor 2",
+const zonaWaktuOrder = [
+  { name: "Sarapan", time: "06:00:00.000Z" },
+  { name: "Makan Siang", time: "12:00:00.000Z" },
+  { name: "Makan Sore", time: "16:00:00.000Z" },
+  { name: "Makan Malam", time: "19:00:00.000Z" },
 ];
 
 const employeeTypes = ["PLNIP", "IPS", "KOP", "RSU", "MITRA"];
-
-// Sample data for PLNIP names (you would replace this with actual data)
-const plnipNames = {
-  IT: ["John Doe", "Jane Smith", "Bob Johnson"],
-  HR: ["Alice Brown", "Charlie Davis", "Eva White"],
-  Finance: ["Frank Miller", "Grace Lee", "Henry Clark"],
-  Marketing: ["Ivy Chen", "Jack Wilson", "Karen Taylor"],
-  Operations: ["Liam Harris", "Mia Rodriguez", "Noah Martinez"],
-};
 
 export default function MobileAddOrder({
   onBack,
@@ -67,6 +51,63 @@ export default function MobileAddOrder({
     MITRA: [],
   });
   const [dropPoint, setDropPoint] = useState("");
+  const [picName, setPicName] = useState("");
+  const [picPhone, setPicPhone] = useState("");
+
+  // State for dynamic data
+  const [plnipNames, setPlnipNames] = useState({});
+  const [bidangOptions, setBidangOptions] = useState([]);
+  const [menuOptions, setMenuOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // New state for asman
+  const [asman, setAsman] = useState({
+    name: "",
+    subBidang: "",
+    nomorHp: "",
+  });
+
+  // Fetch dynamic data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch sub bidang employees
+        const subBidangResponse = await getSubBidangEmployees();
+        setPlnipNames(subBidangResponse.data);
+        setBidangOptions(Object.keys(subBidangResponse.data));
+
+        // Fetch menu items - store full menu item objects
+        const menuResponse = await getMenuItems();
+        setMenuOptions(menuResponse.data.filter((item) => item.isAvailable));
+      } catch (err) {
+        setError(err.message);
+        console.error("Error fetching data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Update asman when subBidang changes
+  useEffect(() => {
+    if (subBidang && plnipNames[subBidang]) {
+      const asmanEmployee = plnipNames[subBidang].find((emp) => emp.isAsman);
+      if (asmanEmployee) {
+        setAsman({
+          name: asmanEmployee.name,
+          subBidang: subBidang,
+          nomorHp: asmanEmployee.nomorHp,
+        });
+      } else {
+        setAsman({ name: "", subBidang: "", nomorHp: "" });
+      }
+    }
+  }, [subBidang, plnipNames]);
 
   useEffect(() => {
     const newEmployees = { ...employees };
@@ -101,30 +142,67 @@ export default function MobileAddOrder({
     setIsFormValid(isValid);
   }, [subBidang, judulPekerjaan, counts, employees, dropPoint, setIsFormValid]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     // Create an object with all the form data
-    const formData = {
-      phone: "6287733760363",
-      zonaWaktu,
-      subBidang,
+    const submittedData = {
       judulPekerjaan,
-      employeeCounts: counts,
-      employeeDetails: employees,
+      type: "MEAL",
+      requestDate: new Date().toISOString(),
+      requiredDate: (() => {
+        const today = new Date();
+        const selectedTime = zonaWaktuOrder.find(
+          (z) => z.name === zonaWaktu
+        )?.time;
+        if (selectedTime) {
+          const [hours, minutes] = selectedTime.split(":");
+          today.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+        return today.toISOString();
+      })(),
       dropPoint,
-      totalEmployees: Object.values(counts).reduce((a, b) => a + b, 0),
-      timestamp: new Date().toISOString(),
+      supervisor: {
+        name: asman.name,
+        subBidang: asman.subBidang,
+        nomorHp: asman.nomorHp,
+      },
+      pic: {
+        name: picName,
+        nomorHp: picPhone,
+      },
+      employeeOrders: Object.entries(employees).flatMap(([type, empList]) =>
+        empList.map((emp) => ({
+          employeeName: emp.name,
+          entity: type,
+          items: [
+            {
+              menuItemId: emp.menu.id,
+              quantity: 1,
+              notes: emp.note || undefined,
+            },
+          ],
+        }))
+      ),
     };
 
     // Log the complete form data
-    console.log("Form Submission Data:", formData);
+    console.log("Form Submission Data:", submittedData);
 
-    // Log specific sections for easier debugging
-    console.log("Time Zone Selected:", zonaWaktu);
-    console.log("Department:", subBidang);
-    console.log("Job Title:", judulPekerjaan);
-    console.log("Employee Counts by Type:", counts);
-    console.log("Employee Details:", employees);
-    console.log("Drop Point:", dropPoint);
+    try {
+      const response = await createOrder(submittedData);
+      console.log("Success:", response.data);
+      window.location.href = `/dashboard/meal-order/list/add/success/${response.data.id}`;
+    } catch (error) {
+      console.error("Error:", error);
+    }
+
+    // // Log specific sections for easier debugging
+    // console.log("Time Zone Selected:", zonaWaktu);
+    // console.log("Department:", subBidang);
+    // console.log("Job Title:", judulPekerjaan);
+    // console.log("Employee Counts by Type:", counts);
+    // console.log("Employee Details:", employees);
+    // console.log("Drop Point:", dropPoint);
 
     // Send data to API endpoint
     // fetch("http://localhost:53r300/api/messages/send-meal", {
@@ -151,7 +229,7 @@ export default function MobileAddOrder({
 
     // Proceed with the navigation
 
-    window.location.href = "/dashboard/meal-order/list/add/success";
+    // window.location.href = "/dashboard/meal-order/list/add/success";
   };
 
   const handleCountChange = (type, value) => {
@@ -159,12 +237,21 @@ export default function MobileAddOrder({
   };
 
   const handleEmployeeChange = (type, index, field, value) => {
-    setEmployees((prev) => ({
-      ...prev,
-      [type]: prev[type].map((emp, i) =>
-        i === index ? { ...emp, [field]: value } : emp
-      ),
-    }));
+    const updatedEmployees = { ...employees };
+    if (field === "menu") {
+      // Find the full menu item object
+      const menuItem = menuOptions.find((item) => item.id === value);
+      updatedEmployees[type][index] = {
+        ...updatedEmployees[type][index],
+        menu: menuItem, // Store the full menu item object
+      };
+    } else {
+      updatedEmployees[type][index] = {
+        ...updatedEmployees[type][index],
+        [field]: value,
+      };
+    }
+    setEmployees(updatedEmployees);
   };
 
   const renderEmployeeInputs = (type) => {
@@ -189,36 +276,37 @@ export default function MobileAddOrder({
                     <SelectValue placeholder="Select employee" />
                   </SelectTrigger>
                   <SelectContent>
-                    {plnipNames[subBidang]?.map((name) => (
-                      <SelectItem key={name} value={name}>
-                        {name}
+                    {plnipNames[subBidang]?.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.name}>
+                        {emp.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               ) : (
                 <Input
-                  placeholder="Employee Name"
-                  value={emp.name}
+                  id={`${type}Name${index}`}
+                  value={employees[type][index]?.name || ""}
                   onChange={(e) =>
                     handleEmployeeChange(type, index, "name", e.target.value)
                   }
+                  placeholder={`Enter ${type} name`}
                   className="rounded-xl"
                 />
               )}
               <Select
-                value={emp.menu}
+                value={employees[type][index]?.menu?.id || ""}
                 onValueChange={(value) =>
                   handleEmployeeChange(type, index, "menu", value)
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger id={`${type}Menu${index}`}>
                   <SelectValue placeholder="Select menu" />
                 </SelectTrigger>
                 <SelectContent>
-                  {menuOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
+                  {menuOptions.map((menuItem) => (
+                    <SelectItem key={menuItem.id} value={menuItem.id}>
+                      {menuItem.name} ({menuItem.category})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -248,19 +336,34 @@ export default function MobileAddOrder({
           >
             Pilih Waktu
           </Label>
-          <Select value={zonaWaktu} onValueChange={setZonaWaktu}>
-            <SelectTrigger
-              id="zonaWaktu"
-              className="mt-1 h-12 w-full rounded-xl"
-            >
-              <SelectValue placeholder="Pilih Waktu" />
+          <Select
+            value={zonaWaktu.name}
+            onValueChange={(value) => {
+              const selectedOption = zonaWaktuOrder.find(
+                (opt) => opt.name === value
+              );
+              if (selectedOption) {
+                setZonaWaktu(value); // Store just the name
+              }
+            }}
+          >
+            <SelectTrigger id="zonaWaktu">
+              <SelectValue placeholder="Select Order" />
             </SelectTrigger>
             <SelectContent>
-              {zonaWaktuOrder.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
+              {zonaWaktuOrder
+                .filter((option) => {
+                  const now = new Date();
+                  const optionTime = new Date();
+                  const [hours, minutes] = option.time.split(":");
+                  optionTime.setUTCHours(parseInt(hours), parseInt(minutes));
+                  return optionTime > now;
+                })
+                .map((option) => (
+                  <SelectItem key={option.name} value={option.name}>
+                    {option.name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
@@ -318,25 +421,41 @@ export default function MobileAddOrder({
             />
           </div>
         </div>
-        <div className="pb-2">
+        <div className="">
           <Label className="text-xs text-muted-foreground" htmlFor="dropPoint">
             Pilih Drop Point
           </Label>
-          <Select value={dropPoint} onValueChange={setDropPoint}>
-            <SelectTrigger
-              id="dropPoint"
-              className="mt-1 h-12 w-full rounded-xl"
-            >
-              <SelectValue placeholder="Pilih Drop Point" />
-            </SelectTrigger>
-            <SelectContent>
-              {dropPointOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Input
+            id="dropPoint"
+            value={dropPoint}
+            onChange={(e) => setDropPoint(e.target.value)}
+            placeholder="Lokasi Drop Point"
+            className="mt-1 h-12 w-full rounded-xl"
+          />
+        </div>
+        <div className="">
+          <Label className="text-xs text-muted-foreground" htmlFor="picName">
+            Nama PIC
+          </Label>
+          <Input
+            id="picName"
+            value={picName}
+            onChange={(e) => setPicName(e.target.value)}
+            placeholder="Nama PIC"
+            className="mt-1 h-12 w-full rounded-xl"
+          />
+        </div>
+        <div className="pb-2">
+          <Label className="text-xs text-muted-foreground" htmlFor="picPhone">
+            Nomor HP PIC
+          </Label>
+          <Input
+            id="picPhone"
+            value={picPhone}
+            onChange={(e) => setPicPhone(e.target.value)}
+            placeholder="Nomor HP PIC"
+            className="mt-1 h-12 w-full rounded-xl"
+          />
         </div>
 
         <Separator />

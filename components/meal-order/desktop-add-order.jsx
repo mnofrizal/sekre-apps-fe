@@ -17,8 +17,14 @@ import { Separator } from "@/components/ui/separator";
 import { Check, X } from "lucide-react";
 import { getSubBidangEmployees } from "@/lib/api/employees";
 import { getMenuItems } from "@/lib/api/menu";
+import { createOrder } from "@/lib/api/order";
 
-const zonaWaktuOrder = ["Sarapan", "Makan Siang", "Makan Sore", "Makan Malam"];
+const zonaWaktuOrder = [
+  { name: "Sarapan", time: "06:00:00.000Z" },
+  { name: "Makan Siang", time: "12:00:00.000Z" },
+  { name: "Makan Sore", time: "16:00:00.000Z" },
+  { name: "Makan Malam", time: "19:00:00.000Z" },
+];
 
 export default function AddOrder() {
   const router = useRouter();
@@ -274,8 +280,20 @@ export default function AddOrder() {
         const submittedData = {
           judulPekerjaan,
           type: "MEAL",
+          requestDate: new Date().toISOString(),
+          requiredDate: (() => {
+            const today = new Date();
+            const selectedTime = zonaWaktuOrder.find(
+              (z) => z.name === zonaWaktu
+            )?.time;
+            if (selectedTime) {
+              const [hours, minutes] = selectedTime.split(":");
+              today.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
+            }
+            return today.toISOString();
+          })(),
           dropPoint,
-          subBidang,
+          // subBidang,
           supervisor: {
             name: asman.name,
             subBidang: asman.subBidang,
@@ -299,6 +317,8 @@ export default function AddOrder() {
             }))
           ),
         };
+
+        console.log(submittedData);
 
         await createOrder(submittedData);
         router.push("/dashboard/meal-order/list/");
@@ -355,16 +375,37 @@ export default function AddOrder() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="zonaWaktu">Order</Label>
-                    <Select value={zonaWaktu} onValueChange={setZonaWaktu}>
+                    <Select
+                      value={zonaWaktu.name}
+                      onValueChange={(value) => {
+                        const selectedOption = zonaWaktuOrder.find(
+                          (opt) => opt.name === value
+                        );
+                        if (selectedOption) {
+                          setZonaWaktu(value); // Store just the name
+                        }
+                      }}
+                    >
                       <SelectTrigger id="zonaWaktu">
                         <SelectValue placeholder="Select Order" />
                       </SelectTrigger>
                       <SelectContent>
-                        {zonaWaktuOrder.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
+                        {zonaWaktuOrder
+                          .filter((option) => {
+                            const now = new Date();
+                            const optionTime = new Date();
+                            const [hours, minutes] = option.time.split(":");
+                            optionTime.setUTCHours(
+                              parseInt(hours),
+                              parseInt(minutes)
+                            );
+                            return optionTime > now;
+                          })
+                          .map((option) => (
+                            <SelectItem key={option.name} value={option.name}>
+                              {option.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   </div>

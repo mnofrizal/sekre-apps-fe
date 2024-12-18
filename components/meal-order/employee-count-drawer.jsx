@@ -1,3 +1,5 @@
+"use client";
+
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +11,14 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+
+const employeeTypes = [
+  { id: "PLNIP", label: "PLNIP" },
+  { id: "IPS", label: "IPS" },
+  { id: "KOP", label: "KOP" },
+  { id: "RSU", label: "RSU" },
+  { id: "MITRA", label: "MITRA" },
+];
 
 export function EmployeeCountDrawer({ counts, onCountChange }) {
   const handleIncrement = (type) => {
@@ -51,25 +61,28 @@ export function EmployeeCountDrawer({ counts, onCountChange }) {
           </DrawerHeader>
           <div className="p-4 pb-0">
             <div className="flex flex-col gap-4">
-              {Object.entries(counts).map(([type, count]) => (
-                <div key={type} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{type}</span>
+              {employeeTypes.map((type) => (
+                <div
+                  key={type.id}
+                  className="flex items-center justify-between"
+                >
+                  <span className="text-sm font-medium">{type.label}</span>
                   <div className="flex items-center gap-4">
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => handleDecrement(type)}
-                      disabled={count === 0}
+                      onClick={() => handleDecrement(type.id)}
+                      disabled={counts[type.id] === 0}
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="w-4 text-center">{count}</span>
+                    <span className="w-4 text-center">{counts[type.id]}</span>
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => handleIncrement(type)}
+                      onClick={() => handleIncrement(type.id)}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>

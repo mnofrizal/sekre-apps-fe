@@ -6,7 +6,7 @@ export default function LandingPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background">
       <div className="container mx-auto px-4 text-center">
         <h1 className="mb-6 text-4xl font-bold">
-          Welcome to General Affairs Dashboard
+          Welcome to General Affairs Suralaya Dashboard
         </h1>
         <p className="mb-8 text-lg text-muted-foreground">
           Manage your organization's general affairs efficiently

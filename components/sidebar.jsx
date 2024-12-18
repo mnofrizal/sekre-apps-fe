@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -25,22 +26,26 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { useSession } from "next-auth/react";
 
-const menuItems = [
-  {
-    type: "item",
-    title: "Dashboard",
-    icon: LayoutDashboard,
-    href: "/dashboard",
-  },
-  {
-    type: "item",
-    title: "All Orders",
-    icon: ClipboardList,
-    href: "/dashboard/all-orders",
-  },
-  {
+const getMenuItems = (role) => {
+  // Base menu items that everyone sees
+  const baseItems = [
+    {
+      type: "item",
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/dashboard",
+    },
+    {
+      type: "item",
+      title: "All Orders",
+      icon: ClipboardList,
+      href: "/dashboard/all-orders",
+    },
+  ];
+
+  // Menu items for meal orders - modified for role-based access
+  const getMealOrderItems = (isAdmin) => ({
     type: "segment",
     title: "Layanan",
     items: [
@@ -53,16 +58,53 @@ const menuItems = [
             href: "/dashboard/meal-order/list",
             icon: ClipboardList,
           },
+          ...(isAdmin
+            ? [
+                {
+                  title: "Menu",
+                  href: "/dashboard/meal-order/menu",
+                  icon: MenuIcon,
+                },
+                {
+                  title: "Reports",
+                  href: "/dashboard/meal-order/reports",
+                  icon: BarChart3,
+                },
+              ]
+            : []),
+        ],
+      },
+    ],
+  });
+
+  // Full service menu items
+  const getFullServiceItems = (isAdmin) => ({
+    type: "segment",
+    title: "Layanan",
+    items: [
+      {
+        title: "Meal Orders",
+        icon: UtensilsCrossed,
+        items: [
           {
-            title: "Menu",
-            href: "/dashboard/meal-order/menu",
-            icon: MenuIcon,
+            title: "Order List",
+            href: "/dashboard/meal-order/list",
+            icon: ClipboardList,
           },
-          {
-            title: "Reports",
-            href: "/dashboard/meal-order/reports",
-            icon: BarChart3,
-          },
+          ...(isAdmin
+            ? [
+                {
+                  title: "Menu",
+                  href: "/dashboard/meal-order/menu",
+                  icon: MenuIcon,
+                },
+                {
+                  title: "Reports",
+                  href: "/dashboard/meal-order/reports",
+                  icon: BarChart3,
+                },
+              ]
+            : []),
         ],
       },
       {
@@ -114,8 +156,10 @@ const menuItems = [
         ],
       },
     ],
-  },
-  {
+  });
+
+  // Admin segment
+  const adminSegment = {
     type: "segment",
     title: "Admin",
     items: [
@@ -136,8 +180,20 @@ const menuItems = [
         ],
       },
     ],
-  },
-];
+  };
+
+  const isAdmin = role === "ADMIN";
+
+  // Return menu items based on role
+  switch (role) {
+    case "ADMIN":
+      return [...baseItems, getFullServiceItems(true), adminSegment];
+    case "KITCHEN":
+      return [...baseItems, getMealOrderItems(false)];
+    default:
+      return [...baseItems, getFullServiceItems(false)];
+  }
+};
 
 function MenuItem({ item, isActive, level = 0 }) {
   const pathname = usePathname();
@@ -229,6 +285,8 @@ export default function Sidebar() {
 
   if (!session?.user) return null;
 
+  const menuItems = getMenuItems(session.user.role);
+
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex-grow overflow-y-auto p-4">
@@ -260,13 +318,12 @@ export default function Sidebar() {
       <div className="border-t p-4">
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarImage src="/avatar.png" alt="User Avatar" />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarImage src="/avatar.png" alt={session.user.name} />
+            <AvatarFallback>{session.user.name[0]}</AvatarFallback>
           </Avatar>
           <div>
-            <div className="font-medium"> {session.user.name}</div>
+            <div className="font-medium">{session.user.name}</div>
             <div className="text-sm text-muted-foreground">
-              {" "}
               {session.user.role}
             </div>
           </div>

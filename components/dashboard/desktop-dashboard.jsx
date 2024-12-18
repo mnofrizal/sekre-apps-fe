@@ -1,13 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UtensilsCrossed, Car, Building2, FileBox } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { DesktopDashboardOrders } from "./desktop-dashboard-order-list";
-import { Badge } from "../ui/badge";
 import { useSession } from "next-auth/react";
+import { getAllOrders } from "@/lib/api/order";
 
 const cardVariants = {
   initial: { opacity: 0, y: 20, scale: 0.8 },
@@ -26,26 +27,71 @@ const containerVariants = {
   },
 };
 
-const data = [
-  { project: "Meal", count: 36 },
-  { project: "Transport", count: 0 },
-  { project: "Room", count: 0 },
-  { project: "ATK", count: 0 },
-];
-
 export function DesktopDashboard() {
   const { data: session } = useSession();
 
-  if (!session?.user) return null;
+  const [serviceRequests, setServiceRequests] = useState([
+    { type: "MEAL", count: 0 },
+    { type: "TRANSPORT", count: 0 },
+    { type: "ROOM", count: 0 },
+    { type: "STATIONARY", count: 0 },
+  ]);
+  const [loading, setLoading] = useState(true);
 
-  const maxCount = Math.max(...data.map((item) => item.count));
-  const statisticsCards = [
-    { title: "Total Meal Orders", value: "24", icon: UtensilsCrossed },
-    { title: "Transport Requests", value: "0", icon: Car },
-    { title: "Room Bookings", value: "0", icon: Building2 },
-    { title: "Stationary Requests", value: "0", icon: FileBox },
-  ];
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await getAllOrders();
 
+        // Count orders by type
+        const counts = response.data.reduce((acc, order) => {
+          acc[order.type] = (acc[order.type] || 0) + 1;
+          return acc;
+        }, {});
+
+        // Update service requests with actual counts
+        setServiceRequests([
+          { type: "MEAL", count: counts.MEAL || 0 },
+          { type: "TRANSPORT", count: counts.TRANSPORT || 0 },
+          { type: "ROOM", count: counts.ROOM || 0 },
+          { type: "STATIONARY", count: counts.STATIONARY || 0 },
+        ]);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+  const maxCount = Math.max(...serviceRequests.map((item) => item.count));
+
+  const statisticsCards = serviceRequests.map((request) => {
+    const icons = {
+      MEAL: UtensilsCrossed,
+      TRANSPORT: Car,
+      ROOM: Building2,
+      STATIONARY: FileBox,
+    };
+
+    const titles = {
+      MEAL: "Total Meal Orders",
+      TRANSPORT: "Transport Requests",
+      ROOM: "Room Bookings",
+      STATIONARY: "Stationary Requests",
+    };
+
+    return {
+      title: titles[request.type],
+      value: request.count.toString(),
+      icon: icons[request.type],
+    };
+  });
+
+  // Keep existing manageOrderCards array
+
+  // Keep existing newOrders array
   const manageOrderCards = [
     {
       title: "Meal Orders",
@@ -72,11 +118,13 @@ export function DesktopDashboard() {
       color: "text-yellow-600",
     },
   ];
-  const spaces = [
+  const newOrders = [
     { category: "meal_order", subBidang: "Operasi 5-7", icon: UtensilsCrossed },
     { category: "transport", subBidang: "Fasilitas dan Sarana", icon: Car },
     { category: "atk", subBidang: "Pemeliharaan Turbin", icon: FileBox },
   ];
+
+  if (!session?.user) return null;
 
   return (
     <motion.div
@@ -85,7 +133,11 @@ export function DesktopDashboard() {
       animate="animate"
       variants={containerVariants}
     >
-      <div className="col-span-3 space-y-10">
+      <div
+        className={`col-span-${
+          session.user.role === "ADMIN" ? "3" : "4"
+        } space-y-10`}
+      >
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h1 className="text-4xl font-medium tracking-tight">
@@ -156,104 +208,100 @@ export function DesktopDashboard() {
             ))}
           </motion.div>
         </div>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <h2 className="mr-2 text-xl font-semibold">Kelola Persutujuan</h2>
-              <Badge variant="default">4</Badge>
-            </div>
-            <Link
-              href="/dashboard/all-orders"
-              className="ml-auto text-sm text-blue-500 hover:text-blue-700"
-            >
-              See All
-            </Link>
+        {session.user.role === "ADMIN" && (
+          <div className="space-y-6">
+            <DesktopDashboardOrders></DesktopDashboardOrders>
           </div>
-          <DesktopDashboardOrders></DesktopDashboardOrders>
-        </div>
+        )}
       </div>
-      <div className="ml-2 space-y-8 border-l border-border pl-8">
-        <Card className="rounded-2xl border-gray-300 shadow-sm">
-          <CardHeader>
-            <span className="text-lg font-semibold">Permintaan Hari ini</span>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {data.map((item, index) => (
-              <div key={index} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-sm text-muted-foreground">
-                    {item.project}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {item.count}
-                  </span>
-                </div>
-                <div className="h-4 w-full overflow-hidden rounded-sm bg-muted">
-                  <motion.div
-                    className="h-full rounded-sm bg-primary"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(item.count / maxCount) * 100}%` }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                  />
-                </div>
-              </div>
-            ))}
-            <div className="mt-2 flex justify-between text-sm text-muted-foreground">
-              <span>0</span>
-              <span>{Math.floor(maxCount / 2)}</span>
-              <span>{maxCount}</span>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="rounded-2xl border-gray-300 shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="text-lg font-semibold">Permintaan Baru</div>
-            <Link
-              href="/dashboard/all-orders"
-              className="ml-auto text-sm text-blue-500 hover:text-blue-700"
-            >
-              See All
-            </Link>
-          </div>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col gap-2">
-              {spaces.map((space, i) => (
-                <div
-                  key={i}
-                  className="flex cursor-pointer rounded-lg border p-4 hover:bg-accent"
-                >
-                  <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
-                      space.category === "meal_order"
-                        ? "bg-red-400"
-                        : space.category === "transport"
-                        ? "bg-blue-400"
-                        : "bg-green-400"
-                    }`}
-                  >
-                    <space.icon className="h-6 w-6 text-white" />
+      {session.user.role === "ADMIN" && (
+        <div className="ml-2 space-y-8 border-l border-border pl-8">
+          <Card className="rounded-2xl border-gray-300 shadow-sm">
+            <CardHeader>
+              <span className="text-lg font-semibold">Permintaan Hari ini</span>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {serviceRequests.map((item, index) => (
+                <div key={index} className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-sm text-muted-foreground">
+                      {item.type}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {item.count}
+                    </span>
                   </div>
-                  <div className="ml-3 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">
-                        {space.category === "meal_order"
-                          ? "Meal Order"
-                          : space.category === "transport"
-                          ? "Transport"
-                          : "ATK"}
-                      </span>
-                      <span className="text-xs text-gray-400">08.09 WIB</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {space.subBidang}
-                    </p>
+                  <div className="h-4 w-full overflow-hidden rounded-sm bg-muted">
+                    <motion.div
+                      className="h-full rounded-sm bg-primary"
+                      initial={{ width: 0 }}
+                      animate={{
+                        width: `${
+                          maxCount > 0 ? (item.count / maxCount) * 100 : 0
+                        }%`,
+                      }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                    />
                   </div>
                 </div>
               ))}
+              <div className="mt-2 flex justify-between text-sm text-muted-foreground">
+                <span>0</span>
+                <span>{Math.floor(maxCount / 2)}</span>
+                <span>{maxCount}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-gray-300 shadow-sm">
+            <div className="flex items-center justify-between px-6 py-4">
+              <div className="text-lg font-semibold">Permintaan Baru</div>
+              <Link
+                href="/dashboard/all-orders"
+                className="ml-auto text-sm text-blue-500 hover:text-blue-700"
+              >
+                See All
+              </Link>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-2">
+                {newOrders.map((order, i) => (
+                  <div
+                    key={i}
+                    className="flex cursor-pointer rounded-lg border p-4 hover:bg-accent"
+                  >
+                    <div
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
+                        order.category === "meal_order"
+                          ? "bg-red-400"
+                          : order.category === "transport"
+                          ? "bg-blue-400"
+                          : "bg-green-400"
+                      }`}
+                    >
+                      <order.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">
+                          {order.category === "meal_order"
+                            ? "Meal Order"
+                            : order.category === "transport"
+                            ? "Transport"
+                            : "ATK"}
+                        </span>
+                        <span className="text-xs text-gray-400">08.09 WIB</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {order.subBidang}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </motion.div>
   );
 }

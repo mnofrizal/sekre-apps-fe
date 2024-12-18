@@ -1,64 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-// Dummy data for meal orders
-const dummyOrders = [
-  {
-    id: 1,
-    time: "07:00",
-    type: "Sarapan",
-    subDepartment: "Pemeliharaan",
-    quantity: 25,
-    menu: [
-      { item: "Nasi Goreng", quantity: 15 },
-      { item: "Bubur Ayam", quantity: 10 },
-    ],
-    dropPoint: "Gedung A",
-    status: "Selesai",
-  },
-  {
-    id: 2,
-    time: "12:00",
-    type: "Makan Siang",
-    subDepartment: "Operator",
-    quantity: 30,
-    menu: [
-      { item: "Nasi Ayam", quantity: 20 },
-      { item: "Gado-gado", quantity: 10 },
-    ],
-    dropPoint: "Gedung B",
-    status: "Sedang Diproses",
-  },
-  {
-    id: 3,
-    time: "15:30",
-    type: "Sore",
-    subDepartment: "Humas",
-    quantity: 20,
-    menu: [{ item: "Kue Putu", quantity: 20 }],
-    dropPoint: "Gedung C",
-    status: "Terjadwal",
-  },
-  {
-    id: 4,
-    time: "18:00",
-    type: "Malam",
-    subDepartment: "Pemeliharaan",
-    quantity: 35,
-    menu: [
-      { item: "Nasi Uduk", quantity: 20 },
-      { item: "Soto Ayam", quantity: 15 },
-    ],
-    dropPoint: "Gedung A",
-    status: "Terjadwal",
-  },
-];
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { getMonitoringData } from "@/lib/api/monitoring";
+import { format } from "date-fns";
 
 export default function MealSchedule() {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [orders, setOrders] = useState(dummyOrders);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Update current time
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -66,6 +20,30 @@ export default function MealSchedule() {
 
     return () => {
       clearInterval(timer);
+    };
+  }, []);
+
+  // Fetch monitoring data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await getMonitoringData();
+        setOrders(response.data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    // Refresh data every 30 seconds
+    const refreshInterval = setInterval(fetchData, 30000);
+
+    return () => {
+      clearInterval(refreshInterval);
     };
   }, []);
 
@@ -81,10 +59,41 @@ export default function MealSchedule() {
       .replace(/\./g, ":");
   };
 
-  const totalOrders = orders.reduce((sum, order) => sum + order.quantity, 0);
-  const completedOrders = orders
-    .filter((order) => order.status === "Selesai")
-    .reduce((sum, order) => sum + order.quantity, 0);
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "PENDING_SUPERVISOR":
+        return "bg-yellow-100 text-yellow-800";
+      case "APPROVED":
+        return "bg-green-100 text-green-800";
+      case "REJECTED":
+        return "bg-red-100 text-red-800";
+      case "IN_PROGRESS":
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const totalOrders = orders.length;
+  const completedOrders = orders.filter(
+    (order) => order.status === "COMPLETED"
+  ).length;
+
+  if (loading) {
+    return (
+      <div className="container mx-auto flex h-[400px] items-center justify-center p-6">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto flex h-[400px] items-center justify-center p-6 text-red-500">
+        Error: {error}
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -158,42 +167,38 @@ export default function MealSchedule() {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
+            {orders.map((order, index) => (
               <tr
                 key={order.id}
                 className="border-b transition-colors hover:bg-muted/50"
               >
-                <td className="p-4">{order.id}</td>
-                <td className="p-4">{order.time}</td>
+                <td className="p-4">{index + 1}</td>
+                <td className="p-4">
+                  {format(new Date(order.requiredDate), "HH:mm")}
+                </td>
                 <td className="p-4">{order.type}</td>
-                <td className="p-4">{order.subDepartment}</td>
+                <td className="p-4">{order.supervisor.subBidang}</td>
                 <td className="p-4 text-center">
                   <span className="flex h-8 w-20 items-center justify-center rounded-xl bg-green-600 text-xl font-medium text-primary-foreground">
-                    {order.quantity}
+                    {order.employeeOrders.length}
                   </span>
                 </td>
                 <td className="p-4">
                   <ul className="space-y-1">
-                    {order.menu.map((item, index) => (
-                      <li key={index}>
-                        {item.quantity}x {item.item}
-                      </li>
-                    ))}
+                    {order.employeeOrders.map((employeeOrder) =>
+                      employeeOrder.orderItems.map((item) => (
+                        <li key={item.id}>
+                          {item.quantity}x {item.menuItem.name}
+                        </li>
+                      ))
+                    )}
                   </ul>
                 </td>
                 <td className="p-4">{order.dropPoint}</td>
                 <td className="p-4">
-                  <span
-                    className={`inline-flex items-center rounded-lg px-2 py-2 text-xs font-semibold uppercase ${
-                      order.status === "Selesai"
-                        ? "bg-green-100 text-green-800"
-                        : order.status === "Sedang Diproses"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
+                  <Badge className={getStatusColor(order.status)}>
                     {order.status}
-                  </span>
+                  </Badge>
                 </td>
               </tr>
             ))}

@@ -1,43 +1,8 @@
 "use client";
 
+import { DesktopProfile } from "@/components/profile/desktop-profile";
+import { MobileProfile } from "@/components/profile/mobile-profile";
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { User } from "lucide-react";
-
-function DesktopProfile() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Profile</h1>
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex h-32 items-center justify-center">
-            <p className="text-muted-foreground">
-              Desktop profile page has not been implemented yet.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function MobileProfile() {
-  return (
-    <div className="space-y-4">
-      <h1 className="mb-4 text-xl font-semibold">Profile</h1>
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex h-32 flex-col items-center justify-center">
-            <User className="mb-2 h-8 w-8 text-muted-foreground" />
-            <p className="text-center text-sm text-muted-foreground">
-              Mobile profile page has not been implemented yet.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
 
 export default function ProfilePage() {
   const [isMobile, setIsMobile] = useState(false);
