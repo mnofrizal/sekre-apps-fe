@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { OrderApprovalFooter } from "./orders-approval-button";
 
 const orderTypes = {
   approval: {
@@ -150,6 +151,8 @@ export function DesktopOrders() {
     );
   }
 
+  console.log(filteredOrders);
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Semua Permintaan</h1>
@@ -221,31 +224,13 @@ export function DesktopOrders() {
                         </p>
                       </div>
                     </CardContent>
-                    {!isSecretary &&
-                      PENDING_STATUSES.includes(order.status) && (
-                        <CardFooter className="bg-muted p-4">
-                          <div className="flex w-full justify-end space-x-2">
-                            <Button
-                              variant="outline"
-                              onClick={() => handleReject(order.id)}
-                            >
-                              Reject
-                            </Button>
-                            <Button onClick={() => handleApprove(order.id)}>
-                              {session.user.role === "ADMIN" &&
-                              order.status === "PENDING_SUPERVISOR"
-                                ? "Approve as Supervisor"
-                                : session.user.role === "ADMIN" &&
-                                  order.status === "PENDING_KITCHEN"
-                                ? "Approve as Kitchen"
-                                : session.user.role === "ADMIN" &&
-                                  order.status === "PENDING_GA"
-                                ? "Approve"
-                                : "Approve"}
-                            </Button>
-                          </div>
-                        </CardFooter>
-                      )}
+                    <OrderApprovalFooter
+                      isSecretary={isSecretary}
+                      order={order}
+                      session={session}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                    />
                   </Card>
                 );
               })}
