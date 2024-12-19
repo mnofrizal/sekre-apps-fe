@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { OrderApprovalFooter } from "./orders-approval-button";
+import { respondToRequest } from "@/lib/api/requests";
 
 const orderTypes = {
   approval: {
@@ -78,17 +79,28 @@ export function DesktopOrders() {
     }
   };
 
-  const handleApprove = (id) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === id
-          ? { ...order, status: "APPROVED", needsApproval: false }
-          : order
-      )
-    );
+  const handleApprove = async (token) => {
+    console.log(token);
+    // Handle approval logic here
+    try {
+      const response = await respondToRequest(token, true, "Request approved");
+      console.log(response);
+      fetchOrders();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleReject = (id) => {
+  const handleReject = async (token) => {
+    // Handle approval logic here
+    try {
+      const response = await respondToRequest(token, false, "Request rejected");
+      console.log(response);
+      fetchOrders();
+    } catch (error) {
+      console.error(error);
+    }
+
     setOrders(
       orders.map((order) =>
         order.id === id

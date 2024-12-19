@@ -1,6 +1,7 @@
 import React from "react";
 import { CardFooter } from "../ui/card";
 import { Button } from "../ui/button";
+import { FRONTEND_BASE_URL } from "@/lib/constant";
 
 const PENDING_STATUSES = [
   "PENDING_SUPERVISOR",
@@ -31,68 +32,48 @@ export const OrderApprovalFooter = ({
     return null;
   }
 
-  // Find approval link when status is PENDING_SUPERVISOR
-  const supervisorLink =
-    order.status === "PENDING_SUPERVISOR"
-      ? order.approvalLinks.find(
-          (link) => link.type === "SUPERVISOR" && !link.isUsed
-        )
+  const findLink = (status, type) =>
+    order.status === status
+      ? order.approvalLinks.find((link) => link.type === type && !link.isUsed)
       : null;
 
-  // Find approval link when status is PENDING_GA
-  const gaLink =
-    order.status === "PENDING_GA"
-      ? order.approvalLinks.find((link) => link.type === "GA" && !link.isUsed)
-      : null;
+  const getApprovalToken = () => {
+    if (session.user.role === "ADMIN") {
+      return order.approvalLinks.find((link) => !link.isUsed)?.token;
+    } else {
+      switch (session.user.role) {
+        case "SUPERVISOR":
+          return findLink("PENDING_SUPERVISOR", "SUPERVISOR")?.token;
+        case "KITCHEN":
+          return findLink("PENDING_KITCHEN", "KITCHEN")?.token;
+        default:
+          return null;
+      }
+    }
+  };
 
-  // Find approval link when status is PENDING_KITCHEN
-  const kitchenLink =
-    order.status === "PENDING_KITCHEN"
-      ? order.approvalLinks.find(
-          (link) => link.type === "KITCHEN" && !link.isUsed
-        )
-      : null;
+  const approvalToken = getApprovalToken();
+
+  const copyLink = () => {
+    if (approvalToken) {
+      navigator.clipboard.writeText(
+        `${FRONTEND_BASE_URL}/requests/approval/${approvalToken}`
+      );
+    }
+  };
 
   return (
     <CardFooter className="bg-muted p-4">
       <div className="flex w-full justify-end space-x-2">
-        {supervisorLink && (
-          <Button
-            variant="secondary"
-            onClick={() => {
-              // You can copy the link or handle it as needed
-              navigator.clipboard.writeText(`/approve/${supervisorLink.token}`);
-            }}
-          >
-            Copy Supervisor Link
+        {approvalToken && (
+          <Button variant="secondary" onClick={copyLink}>
+            Copy Approval Link
           </Button>
         )}
-        {gaLink && (
-          <Button
-            variant="secondary"
-            onClick={() => {
-              // You can copy the link or handle it as needed
-              navigator.clipboard.writeText(`/approve/${gaLink.token}`);
-            }}
-          >
-            Copy GA Link
-          </Button>
-        )}
-        {kitchenLink && (
-          <Button
-            variant="secondary"
-            onClick={() => {
-              // You can copy the link or handle it as needed
-              navigator.clipboard.writeText(`/approve/${kitchenLink.token}`);
-            }}
-          >
-            Copy Kitchen Link
-          </Button>
-        )}
-        <Button variant="outline" onClick={() => onReject(order.id)}>
+        <Button variant="outline" onClick={() => onReject(approvalToken)}>
           Reject
         </Button>
-        <Button onClick={() => onApprove(order.id)}>
+        <Button onClick={() => onApprove(approvalToken)}>
           {getApproveButtonText(session.user.role, order.status)}
         </Button>
       </div>
