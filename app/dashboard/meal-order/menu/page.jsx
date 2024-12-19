@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { DesktopMenuList } from "@/components/meal-order/desktop-menu-list";
+import { useState, useEffect } from "react";
 
 export default function MenuPage() {
   const [isMobile, setIsMobile] = useState(false);

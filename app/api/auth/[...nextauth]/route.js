@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/lib/constant";
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
@@ -11,7 +12,7 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         try {
-          const response = await fetch("http://localhost:4000/api/auth/login", {
+          const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
