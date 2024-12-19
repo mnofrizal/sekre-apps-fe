@@ -129,14 +129,14 @@ export function KitchenDashboard() {
         <Button
           variant={activeTab === "pending" ? "default" : "outline"}
           onClick={() => setActiveTab("pending")}
-          className="flex-1"
+          className="flex-1 rounded-xl"
         >
           Pending Orders
         </Button>
         <Button
           variant={activeTab === "completed" ? "default" : "outline"}
           onClick={() => setActiveTab("completed")}
-          className="flex-1"
+          className="flex-1 rounded-xl"
         >
           Other Orders
         </Button>
@@ -145,134 +145,152 @@ export function KitchenDashboard() {
       {/* Order List */}
       <div className="space-y-4">
         <AnimatePresence>
-          {filteredOrders.map((order) => (
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map((order) => (
+              <motion.div
+                key={order.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <Card className="overflow-hidden rounded-2xl">
+                  <Collapsible
+                    open={openItems.includes(order.id)}
+                    onOpenChange={() => toggleItem(order.id)}
+                  >
+                    <CollapsibleTrigger className="flex w-full flex-col p-4">
+                      <div className="flex w-full items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <UtensilsCrossed className="h-5 w-5 text-primary" />
+                          <span className="font-medium">
+                            {order.supervisor.subBidang}
+                          </span>
+                        </div>
+                        <Badge className={statusColors[order.status]}>
+                          {order.status}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-2 flex w-full items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            {order.employeeOrders.length} items
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            •
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {getMealCategory(order.requiredDate)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(order.requiredDate), "HH:mm")}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex w-full items-center justify-center">
+                        <ChevronDown
+                          className={`h-5 w-5 transition-transform duration-200 ${
+                            openItems.includes(order.id) ? "rotate-180" : ""
+                          }`}
+                        />
+                      </div>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent>
+                      <Separator />
+                      <div className="space-y-4 p-4">
+                        {/* Contact Info */}
+                        <div className="space-y-2">
+                          <h3 className="font-medium">Contact Information</h3>
+                          <div className="space-y-2 rounded-lg bg-muted/50 p-3">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">{order.pic.name}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">
+                                {order.pic.nomorHp}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">{order.dropPoint}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Menu Items */}
+                        <div className="space-y-2">
+                          <h3 className="font-medium">Menu Items</h3>
+                          <div className="space-y-2">
+                            {order.employeeOrders.map(
+                              (employeeOrder, index) => (
+                                <div
+                                  key={index}
+                                  className="rounded-lg bg-muted/50 p-3"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-medium">
+                                      {employeeOrder.employeeName}
+                                    </span>
+                                    <Badge variant="secondary">
+                                      {employeeOrder.entity}
+                                    </Badge>
+                                  </div>
+                                  {employeeOrder.orderItems.map(
+                                    (item, itemIndex) => (
+                                      <div
+                                        key={itemIndex}
+                                        className="mt-2 text-sm text-muted-foreground"
+                                      >
+                                        {item.quantity}x {item.menuItem.name}
+                                        {item.notes && (
+                                          <div className="mt-1 text-xs">
+                                            Note: {item.notes}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        {order.status === "PENDING_KITCHEN" && (
+                          <div className="flex gap-2 pt-2">
+                            {/* <Button variant="outline" className="flex-1">
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Reject
+                            </Button> */}
+                            <Button className="flex-1">
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Kirim Pesanan
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
             <motion.div
-              key={order.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <Card className="overflow-hidden rounded-2xl">
-                <Collapsible
-                  open={openItems.includes(order.id)}
-                  onOpenChange={() => toggleItem(order.id)}
-                >
-                  <CollapsibleTrigger className="flex w-full flex-col p-4">
-                    <div className="flex w-full items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <UtensilsCrossed className="h-5 w-5 text-primary" />
-                        <span className="font-medium">
-                          {order.supervisor.subBidang}
-                        </span>
-                      </div>
-                      <Badge className={statusColors[order.status]}>
-                        {order.status}
-                      </Badge>
-                    </div>
-
-                    <div className="mt-2 flex w-full items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          {order.employeeOrders.length} items
-                        </span>
-                        <span className="text-sm text-muted-foreground">•</span>
-                        <span className="text-sm text-muted-foreground">
-                          {getMealCategory(order.requiredDate)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(order.requiredDate), "HH:mm")}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-2 flex w-full items-center justify-center">
-                      <ChevronDown
-                        className={`h-5 w-5 transition-transform duration-200 ${
-                          openItems.includes(order.id) ? "rotate-180" : ""
-                        }`}
-                      />
-                    </div>
-                  </CollapsibleTrigger>
-
-                  <CollapsibleContent>
-                    <Separator />
-                    <div className="space-y-4 p-4">
-                      {/* Contact Info */}
-                      <div className="space-y-2">
-                        <h3 className="font-medium">Contact Information</h3>
-                        <div className="space-y-2 rounded-lg bg-muted/50 p-3">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{order.pic.name}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{order.pic.nomorHp}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{order.dropPoint}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Menu Items */}
-                      <div className="space-y-2">
-                        <h3 className="font-medium">Menu Items</h3>
-                        <div className="space-y-2">
-                          {order.employeeOrders.map((employeeOrder, index) => (
-                            <div
-                              key={index}
-                              className="rounded-lg bg-muted/50 p-3"
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium">
-                                  {employeeOrder.employeeName}
-                                </span>
-                                <Badge variant="secondary">
-                                  {employeeOrder.entity}
-                                </Badge>
-                              </div>
-                              {employeeOrder.orderItems.map(
-                                (item, itemIndex) => (
-                                  <div
-                                    key={itemIndex}
-                                    className="mt-2 text-sm text-muted-foreground"
-                                  >
-                                    {item.quantity}x {item.menuItem.name}
-                                    {item.notes && (
-                                      <div className="mt-1 text-xs">
-                                        Note: {item.notes}
-                                      </div>
-                                    )}
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      {order.status === "PENDING_KITCHEN" && (
-                        <div className="flex gap-2 pt-2">
-                          {/* <Button variant="outline" className="flex-1">
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Reject
-                          </Button> */}
-                          <Button className="flex-1">
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            Kirim Pesanan
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
+              <Card className="rounded-2xl p-6 text-center text-gray-500">
+                <>No pending orders</>
               </Card>
             </motion.div>
-          ))}
+          )}
         </AnimatePresence>
       </div>
     </div>

@@ -15,6 +15,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { ImportExcelDialog } from "@/components/employees/import-employee-dialog";
 
 export default function ManageEmployees() {
   const [allEmployees, setAllEmployees] = useState([]);
@@ -74,6 +75,11 @@ export default function ManageEmployees() {
     window.scrollTo(0, 0);
   };
 
+  const handleImportSuccess = () => {
+    // Refresh the employee list
+    fetchEmployees();
+  };
+
   if (error) {
     return (
       <div className="flex h-[200px] items-center justify-center text-red-500">
@@ -103,6 +109,7 @@ export default function ManageEmployees() {
           <Button variant="outline" size="sm">
             Filter
           </Button>
+          <ImportExcelDialog onSuccess={fetchEmployees} />
         </div>
       </div>
 

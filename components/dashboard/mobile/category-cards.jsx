@@ -35,7 +35,7 @@ const categories = [
   },
 ];
 
-export function CategoryCards({ itemVariants, orders }) {
+export function CategoryCards({ itemVariants }) {
   // Count orders by type
 
   return (

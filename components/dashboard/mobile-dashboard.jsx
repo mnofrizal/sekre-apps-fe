@@ -99,7 +99,7 @@ export function MobileDashboard() {
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <CategoryCards orders={filteredOrders} />
+        <CategoryCards />
       </motion.div>
 
       <motion.div variants={itemVariants}>

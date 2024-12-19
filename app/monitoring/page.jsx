@@ -64,11 +64,13 @@ export default function MealSchedule() {
       case "PENDING_SUPERVISOR":
         return "bg-yellow-100 text-yellow-800";
       case "APPROVED":
-        return "bg-green-100 text-green-800";
+        return "bg-purple-100 text-purple-800";
       case "REJECTED":
         return "bg-red-100 text-red-800";
       case "IN_PROGRESS":
         return "bg-blue-100 text-blue-800";
+      case "COMPLETED":
+        return "bg-green-100 text-green-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -170,7 +172,9 @@ export default function MealSchedule() {
             {orders.map((order, index) => (
               <tr
                 key={order.id}
-                className="border-b transition-colors hover:bg-muted/50"
+                className={`border-b transition-colors hover:bg-muted/50 ${
+                  order.status === "COMPLETED" ? "bg-gray-100" : ""
+                }`}
               >
                 <td className="p-4">{index + 1}</td>
                 <td className="p-4">

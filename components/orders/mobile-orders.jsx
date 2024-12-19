@@ -13,7 +13,7 @@ import {
   Building2,
   Loader2,
 } from "lucide-react";
-import { getAllOrders } from "@/lib/api/order";
+import { getAllOrders, updateOrderStatus } from "@/lib/api/order";
 import { format } from "date-fns";
 import { useSession } from "next-auth/react";
 
@@ -130,6 +130,27 @@ export function MobileOrders() {
     }
   };
 
+  const handleApproveKitchen = (id) => {
+    // Handle approval logic here
+    console.log(`Approving order with ID: ${id}`);
+    updateOrderStatus(id, "COMPLETED")
+      .then(() => {
+        console.log(
+          `Order with ID: ${id} has been approved and marked as COMPLETED.`
+        );
+      })
+      .catch((error) => {
+        console.error(
+          `Failed to approve order with ID: ${id}: ${error.message}`
+        );
+      });
+  };
+
+  const handleApprove = (id) => {
+    // Handle approval logic here
+    console.log(`Approving order with ID: ${id}`);
+  };
+
   return (
     <div className="space-y-4 pb-16">
       <h1 className="mb-4 text-2xl font-bold">Orders</h1>
@@ -192,7 +213,14 @@ export function MobileOrders() {
                       <Button variant="outline" size="sm">
                         Reject
                       </Button>
-                      <Button size="sm">
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          session.user.role === "KITCHEN"
+                            ? handleApproveKitchen(order.id)
+                            : handleApprove(order.id)
+                        }
+                      >
                         {session.user.role === "ADMIN" &&
                         order.status === "PENDING_SUPERVISOR"
                           ? "Approve as Supervisor"
