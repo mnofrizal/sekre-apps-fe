@@ -14,7 +14,7 @@ export function AddButton({ activeTab, onSaveMenuItem }) {
           size="lg"
         >
           <Plus className="mr-2 h-5 w-5" />
-          Add Order
+          Buat Pesanan
         </Button>
       </Link>
     );

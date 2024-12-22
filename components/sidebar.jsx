@@ -18,6 +18,7 @@ import {
   Settings,
   Users,
   Zap,
+  Bell,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -176,6 +177,11 @@ const getMenuItems = (role) => {
             title: "Manage Employee",
             href: "/dashboard/admin/manage-employee",
             icon: Users,
+          },
+          {
+            title: "Manage Whatsapp",
+            href: "/dashboard/admin/manage-whatsapp",
+            icon: Bell,
           },
         ],
       },
