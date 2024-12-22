@@ -12,44 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, Circle, MapPin, Phone, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { getMealCategory, getStatusColor, getStatusName } from "@/lib/constant";
+import { Button } from "../ui/button";
 
 const timeline = [
-  { id: 1, name: "Order Created", status: "complete" },
-  { id: 2, name: "Supervisor Approval", status: "pending" },
-  { id: 3, name: "Secretary Approval", status: "pending" },
-  { id: 4, name: "Canteen Confirmation", status: "pending" },
-  { id: 5, name: "Order Delivered", status: "pending" },
+  { id: 1, name: "Inisiasi Pesanan", status: "complete" },
+  { id: 2, name: "Approval ASMAN", status: "pending" },
+  { id: 3, name: "Approval SEKRETARIAT", status: "pending" },
+  { id: 4, name: "Pesanan Diproses", status: "pending" },
+  { id: 5, name: "Pesanan Terkirim", status: "pending" },
 ];
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case "PENDING_SUPERVISOR":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-    case "APPROVED":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-    case "REJECTED":
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-    case "IN_PROGRESS":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-  }
-};
-
-const getMealCategory = (date) => {
-  const hours = new Date(date).getHours();
-
-  if (hours >= 6 && hours < 12) {
-    return "Sarapan";
-  } else if (hours >= 12 && hours < 16) {
-    return "Makan Siang";
-  } else if (hours >= 16 && hours < 19) {
-    return "Makan Sore";
-  } else if (hours >= 19 || hours < 6) {
-    return "Makan Malam";
-  }
-  return ""; // fallback
-};
 
 export function OrderDetailDialog({ open, onOpenChange, order }) {
   if (!order) return null;
@@ -57,10 +29,8 @@ export function OrderDetailDialog({ open, onOpenChange, order }) {
   const getTimelineStatus = () => {
     const statusMap = {
       PENDING_SUPERVISOR: 1,
-      APPROVED_SUPERVISOR: 2,
-      PENDING_SECRETARY: 2,
-      APPROVED_SECRETARY: 3,
-      PENDING_CANTEEN: 3,
+      PENDING_GA: 2,
+      // PENDING_KITCHEN: 4,
       IN_PROGRESS: 4,
       COMPLETED: 5,
     };
@@ -108,8 +78,12 @@ export function OrderDetailDialog({ open, onOpenChange, order }) {
             <DialogTitle className="text-xl">
               Order Details {order.id.slice(0, 8)}
             </DialogTitle>
-            <Badge className={getStatusColor(order.status)}>
-              {order.status}
+            <Badge
+              className={`${getStatusColor(
+                order.status
+              )} rounded-lg p-2 px-3 text-sm `}
+            >
+              {getStatusName(order.status)}
             </Badge>
           </div>
         </DialogHeader>
@@ -142,7 +116,7 @@ export function OrderDetailDialog({ open, onOpenChange, order }) {
                       <h3 className="mb-1 text-sm font-medium text-muted-foreground">
                         Total Orders
                       </h3>
-                      <p>{order.employeeOrders.length}</p>
+                      <p>{order.employeeOrders.length} Porsi</p>
                     </div>
                     <div>
                       <h3 className="mb-1 text-sm font-medium text-muted-foreground">
@@ -289,6 +263,11 @@ export function OrderDetailDialog({ open, onOpenChange, order }) {
               ))}
             </div>
           </div>
+        </div>
+        <div className="flex justify-end pt-4">
+          <Button onClick={() => onOpenChange(false)} className="">
+            Close
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

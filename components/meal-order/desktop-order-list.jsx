@@ -9,6 +9,9 @@ import {
   MapPin,
   ChevronUp,
   ChevronDown,
+  Copy,
+  LucideLink,
+  Eye,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -37,47 +40,21 @@ import {
 import Link from "next/link";
 import { OrderDetailDialog } from "./order-detail-dialog";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { getAllOrders } from "@/lib/api/order";
+import { deleteOrder, getAllOrders } from "@/lib/api/order";
 import { format } from "date-fns";
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case "PENDING_SUPERVISOR":
-      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-    case "APPROVED":
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-    case "REJECTED":
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-    case "IN_PROGRESS":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-  }
-};
-
-const zonaWaktuOrder = [
-  { name: "Sarapan", time: "06:00:00.000Z" },
-  { name: "Makan Siang", time: "12:00:00.000Z" },
-  { name: "Makan Sore", time: "16:00:00.000Z" },
-  { name: "Makan Malam", time: "19:00:00.000Z" },
-];
-
-const getMealCategory = (date) => {
-  const hours = new Date(date).getHours();
-
-  if (hours >= 6 && hours < 12) {
-    return "Sarapan";
-  } else if (hours >= 12 && hours < 16) {
-    return "Makan Siang";
-  } else if (hours >= 16 && hours < 19) {
-    return "Makan Sore";
-  } else if (hours >= 19 || hours < 6) {
-    return "Makan Malam";
-  }
-  return ""; // fallback
-};
+import {
+  FRONTEND_BASE_URL,
+  getMealCategory,
+  getStatusColor,
+  getStatusName,
+} from "@/lib/constant";
+import { useToast } from "@/hooks/use-toast";
+import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu";
+import { useSession } from "next-auth/react";
 
 export function DesktopOrderList() {
+  const { toast } = useToast();
+  const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -161,6 +138,61 @@ export function DesktopOrderList() {
     setSelectedOrder(order);
     setDialogOpen(true);
   };
+  const handleDelete = async (order) => {
+    try {
+      await deleteOrder(order.id);
+      // Refresh the orders after deletion
+      fetchOrders();
+      toast({
+        title: "Success",
+        description: `Order telah berhasil dihapus!`,
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      toast({
+        title: "Error",
+        description: `Error menghapus order, error: ${error}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCopyLink = (order) => {
+    const findLink = (status, type) =>
+      order.status === status
+        ? order.approvalLinks.find((link) => link.type === type && !link.isUsed)
+        : null;
+
+    const getApprovalToken = () => {
+      if (session.user.role === "ADMIN") {
+        return order.approvalLinks.find((link) => !link.isUsed)?.token;
+      } else {
+        switch (session.user.role) {
+          case "SUPERVISOR":
+            return findLink("PENDING_SUPERVISOR", "SUPERVISOR")?.token;
+          case "KITCHEN":
+            return findLink("PENDING_KITCHEN", "KITCHEN")?.token;
+          default:
+            return null;
+        }
+      }
+    };
+
+    const approvalToken = getApprovalToken();
+
+    if (approvalToken) {
+      navigator.clipboard.writeText(
+        `${FRONTEND_BASE_URL}/approval/${approvalToken}`
+      );
+    }
+
+    toast({
+      title: "Success",
+      description: `Link telah berhasil disalin!`,
+      variant: "success",
+    });
+  };
 
   const handleItemsPerPageChange = (value) => {
     setItemsPerPage(Number(value));
@@ -222,7 +254,7 @@ export function DesktopOrderList() {
           <Link href="/dashboard/meal-order/list/add">
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              Add Order
+              Buat Pesanan
             </Button>
           </Link>
         </div>
@@ -251,9 +283,9 @@ export function DesktopOrderList() {
         </Select>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+      <div className="rounded-lg border shadow-sm">
+        <Table className="">
+          <TableHeader className="rounded-2xl">
             <TableRow className="rounded-2xl border-b bg-slate-100">
               <SortableTableHeader sortKey="id">Order ID</SortableTableHeader>
               <SortableTableHeader sortKey="supervisor.subBidang">
@@ -275,24 +307,32 @@ export function DesktopOrderList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentItems.map((order) => (
-              <TableRow key={order.id}>
+            {currentItems.map((order, index) => (
+              <TableRow
+                key={order.id}
+                className={index % 2 === 0 ? "bg-white" : "bg-[#fbfdff]"}
+              >
                 <TableCell className="p-7">
+                  <button
+                    onClick={() => handleOrderClick(order)}
+                    className="font-semibold text-gray-800 hover:underline"
+                  >
+                    #{order.id}
+                  </button>
+                </TableCell>
+                <TableCell className="text-gray-800">
+                  {order.supervisor.subBidang}
+                </TableCell>
+                <TableCell className="text-gray-800">
                   <button
                     onClick={() => handleOrderClick(order)}
                     className="text-primary hover:underline"
                   >
-                    {order.id.slice(0, 8)}
+                    {order.employeeOrders.length} Porsi
                   </button>
                 </TableCell>
-                <TableCell>{order.supervisor.subBidang}</TableCell>
                 <TableCell>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xl font-medium text-primary-foreground">
-                    {order.employeeOrders.length}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center justify-center rounded-lg border px-1 py-1">
+                  <div className="justify-left flex items-center rounded-lg text-gray-800">
                     <MapPin className="mr-1 h-4 w-4" />
                     {order.dropPoint}
                   </div>
@@ -305,7 +345,9 @@ export function DesktopOrderList() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium">{order.pic.name}</div>
+                      <div className="font-medium text-gray-800">
+                        {order.pic.name}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {order.pic.nomorHp}
                       </div>
@@ -313,36 +355,67 @@ export function DesktopOrderList() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="rounded-lg border px-1 py-1 text-center">
+                  <div className="rounded-lg border px-1 py-1 text-center font-medium text-gray-800">
                     {getMealCategory(order.requiredDate)}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-gray-800">
                   {format(new Date(order.requestDate), "dd MMM yyyy")}
                   <div className="text-xs text-muted-foreground">
                     {format(new Date(order.requestDate), "HH:mm")}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge className={getStatusColor(order.status)}>
-                    {order.status}
+                  <Badge
+                    className={`${getStatusColor(
+                      order.status
+                    )} rounded-lg px-2 py-1`}
+                  >
+                    {getStatusName(order.status)}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-center">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
+                        <Eye className="h-5 w-5" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleOrderClick(order)}>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => handleOrderClick(order)}
+                      >
                         View details
                       </DropdownMenuItem>
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
-                        Delete
-                      </DropdownMenuItem>
+                      {session?.user?.role !== "KITCHEN" && (
+                        <>
+                          <DropdownMenuItem className="cursor-pointer">
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(order)}
+                            className="cursor-pointer text-red-600"
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {session?.user?.role === "ADMIN" &&
+                        ["PENDING_SUPERVISOR", "PENDING_GA"].includes(
+                          order.status
+                        ) && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleCopyLink(order)}
+                              className="cursor-pointer"
+                            >
+                              <LucideLink className="mr-1 h-4 w-4" />
+                              Approval Link
+                            </DropdownMenuItem>
+                          </>
+                        )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -363,7 +436,7 @@ export function DesktopOrderList() {
             value={itemsPerPage.toString()}
             onValueChange={handleItemsPerPageChange}
           >
-            <SelectTrigger className="w-[100px]">
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

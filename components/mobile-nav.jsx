@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, UtensilsCrossed, Bell, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getAllPendingOrders } from "@/lib/api/order";
+import { useEffect, useState } from "react";
 
 export const bottomNavItems = [
   {
@@ -15,7 +17,6 @@ export const bottomNavItems = [
     title: "Orders",
     href: "/dashboard/all-orders",
     icon: UtensilsCrossed,
-    badge: 3,
   },
   {
     title: "Notifications",
@@ -31,6 +32,20 @@ export const bottomNavItems = [
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+
+  useEffect(() => {
+    const fetchPendingOrdersCount = async () => {
+      try {
+        const response = await getAllPendingOrders();
+        setPendingOrdersCount(response.data.length);
+      } catch (error) {
+        console.error("Error fetching pending orders count:", error);
+      }
+    };
+
+    fetchPendingOrdersCount();
+  }, []);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background lg:hidden">
@@ -51,9 +66,9 @@ export default function MobileNav() {
               <div className="relative">
                 <item.icon className="h-6 w-6" />
 
-                {item.badge && (
+                {item.title === "Orders" && pendingOrdersCount > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                    {item.badge}
+                    {pendingOrdersCount}
                   </span>
                 )}
               </div>

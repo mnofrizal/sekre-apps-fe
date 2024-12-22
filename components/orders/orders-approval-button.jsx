@@ -2,6 +2,7 @@ import React from "react";
 import { CardFooter } from "../ui/card";
 import { Button } from "../ui/button";
 import { FRONTEND_BASE_URL } from "@/lib/constant";
+import { useToast } from "@/hooks/use-toast";
 
 const PENDING_STATUSES = [
   "PENDING_SUPERVISOR",
@@ -28,6 +29,8 @@ export const OrderApprovalFooter = ({
   onApprove,
   onReject,
 }) => {
+  const { toast } = useToast();
+
   if (isSecretary || !PENDING_STATUSES.includes(order.status)) {
     return null;
   }
@@ -38,10 +41,10 @@ export const OrderApprovalFooter = ({
       : null;
 
   const getApprovalToken = () => {
-    if (session.user.role === "ADMIN") {
+    if (session?.user?.role === "ADMIN") {
       return order.approvalLinks.find((link) => !link.isUsed)?.token;
     } else {
-      switch (session.user.role) {
+      switch (session?.user?.role) {
         case "SUPERVISOR":
           return findLink("PENDING_SUPERVISOR", "SUPERVISOR")?.token;
         case "KITCHEN":
@@ -57,26 +60,33 @@ export const OrderApprovalFooter = ({
   const copyLink = () => {
     if (approvalToken) {
       navigator.clipboard.writeText(
-        `${FRONTEND_BASE_URL}/requests/approval/${approvalToken}`
+        `${FRONTEND_BASE_URL}/approval/${approvalToken}`
       );
     }
+    toast({
+      title: "Success",
+      description: `Link telah berhasil disalin!`,
+      variant: "success",
+    });
   };
 
   return (
-    <CardFooter className="bg-muted p-4">
-      <div className="flex w-full justify-end space-x-2">
-        {approvalToken && (
-          <Button variant="secondary" onClick={copyLink}>
-            Copy Approval Link
-          </Button>
-        )}
-        <Button variant="outline" onClick={() => onReject(approvalToken)}>
-          Reject
+    <div className="flex w-full justify-end space-x-2">
+      {approvalToken && (
+        <Button variant="outline" onClick={copyLink}>
+          Copy Approval Link
         </Button>
-        <Button onClick={() => onApprove(approvalToken)}>
-          {getApproveButtonText(session.user.role, order.status)}
-        </Button>
-      </div>
-    </CardFooter>
+      )}
+      <Button
+        variant="outline"
+        className="text-red-600"
+        onClick={() => onReject(approvalToken)}
+      >
+        Reject
+      </Button>
+      <Button onClick={() => onApprove(approvalToken)}>
+        {getApproveButtonText(session?.user?.role, order.status)}
+      </Button>
+    </div>
   );
 };

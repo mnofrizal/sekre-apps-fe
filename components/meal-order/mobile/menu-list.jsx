@@ -15,12 +15,14 @@ export function MenuList({ menuItems, onSaveMenuItem }) {
           initialData={item}
           onSave={onSaveMenuItem}
         >
-          <div className="rounded-lg border bg-card p-4">
+          <div className="rounded-2xl border bg-card p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium">{item.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {item.category}
+                <p className="text-xs text-muted-foreground">
+                  {item.category === "HEAVY_MEAL"
+                    ? "MAKANAN BERAT"
+                    : item.category}
                 </p>
               </div>
               <Badge variant={item.isAvailable ? "default" : "secondary"}>

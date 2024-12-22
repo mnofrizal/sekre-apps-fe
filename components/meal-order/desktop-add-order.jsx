@@ -14,10 +14,22 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Check, X } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  Calendar,
+  Check,
+  ForkKnife,
+  ForkKnifeCrossed,
+  MapPin,
+  Phone,
+  User,
+  X,
+} from "lucide-react";
 import { getSubBidangEmployees } from "@/lib/api/employees";
 import { getMenuItems } from "@/lib/api/menu";
 import { createOrder } from "@/lib/api/order";
+import { useToast } from "@/hooks/use-toast";
 
 const zonaWaktuOrder = [
   { name: "Sarapan", time: "06:00:00.000Z" },
@@ -27,6 +39,7 @@ const zonaWaktuOrder = [
 ];
 
 export default function AddOrder() {
+  const { toast } = useToast();
   const router = useRouter();
   const [zonaWaktu, setZonaWaktu] = useState("");
   const [subBidang, setSubBidang] = useState("");
@@ -251,7 +264,7 @@ export default function AddOrder() {
                 <SelectContent>
                   {menuOptions.map((menuItem) => (
                     <SelectItem key={menuItem.id} value={menuItem.id}>
-                      {menuItem.name} ({menuItem.category})
+                      {menuItem.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -320,7 +333,20 @@ export default function AddOrder() {
 
         console.log(submittedData);
 
-        await createOrder(submittedData);
+        try {
+          const order = await createOrder(submittedData);
+          toast({
+            title: "Success",
+            description: `Meal Order telah suskses dibuat!`,
+            variant: "success",
+          });
+        } catch (error) {
+          toast({
+            title: "Error",
+            description: `Error creating order, error: ${error}`,
+            variant: "destructive",
+          });
+        }
         router.push("/dashboard/meal-order/list/");
       } catch (error) {
         console.error("Error submitting order:", error);
@@ -332,7 +358,7 @@ export default function AddOrder() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Add Order</h1>
+        <h1 className="text-3xl font-bold">Buat Pesanan</h1>
         <Button onClick={() => router.back()} variant="outline">
           Back to Order List
         </Button>
@@ -340,10 +366,12 @@ export default function AddOrder() {
       <div className="grid grid-cols-6 items-start gap-6">
         {/* Input Section */}
         <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Order Details</CardTitle>
+          <CardHeader className="border-b bg-slate-100 p-5">
+            <CardTitle className="text-xl font-semibold text-gray-800">
+              Detail Pesanan
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -374,7 +402,7 @@ export default function AddOrder() {
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <Label htmlFor="zonaWaktu">Order</Label>
+                    <Label htmlFor="zonaWaktu">Waktu</Label>
                     <Select
                       value={zonaWaktu.name}
                       onValueChange={(value) => {
@@ -387,7 +415,7 @@ export default function AddOrder() {
                       }}
                     >
                       <SelectTrigger id="zonaWaktu">
-                        <SelectValue placeholder="Select Order" />
+                        <SelectValue placeholder="Select Waktu" />
                       </SelectTrigger>
                       <SelectContent>
                         {zonaWaktuOrder
@@ -477,66 +505,176 @@ export default function AddOrder() {
 
         {/* Summary Section */}
         <div className="col-span-2">
-          <Card className="sticky top-6">
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+          <Card className="sticky top-6 bg-white">
+            <CardHeader className="border-b bg-slate-100 p-5 text-center">
+              <CardTitle className="text-xl font-semibold text-gray-800">
+                Ringkasan Pesanan
+              </CardTitle>
             </CardHeader>
-            <CardContent className="max-h-[calc(100vh-200px)] overflow-y-auto">
-              <div className="space-y-4">
-                <div className="flex items-start justify-between gap-4">
-                  <strong>Sub Bidang:</strong>
-                  <span>{subBidang || "Not selected"}</span>
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-start gap-4">
+                    <Building2 className="mt-1 h-5 w-5 flex-shrink-0 text-gray-500" />
+                    <div className="flex-1">
+                      <div className="mb-1 text-sm text-gray-500">
+                        Sub Bidang
+                      </div>
+                      <div className="font-medium">
+                        {subBidang || "Not selected"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <Briefcase className="mt-1 h-5 w-5 flex-shrink-0 text-gray-500" />
+                    <div className="flex-1">
+                      <div className="mb-1 text-sm text-gray-500">
+                        Judul Pekerjaan
+                      </div>
+                      <div className="font-medium">
+                        {judulPekerjaan || "Not entered"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <Calendar className="mt-1 h-5 w-5 flex-shrink-0 text-gray-500" />
+                    <div className="flex-1">
+                      <div className="mb-1 text-sm text-gray-500">Waktu</div>
+                      <div className="font-medium">
+                        {zonaWaktu || "Not selected"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <MapPin className="mt-1 h-5 w-5 flex-shrink-0 text-gray-500" />
+                    <div className="flex-1">
+                      <div className="mb-1 text-sm text-gray-500">
+                        Drop Point
+                      </div>
+                      <div className="font-medium">
+                        {dropPoint || "Not selected"}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-start justify-between gap-4">
-                  <strong>Judul Pekerjaan:</strong>
-                  <span>{judulPekerjaan || "Not entered"}</span>
+
+                <Separator />
+
+                {/* PIC Information */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-start gap-4">
+                    <User className="mt-1 h-5 w-5 flex-shrink-0 text-gray-500" />
+                    <div className="flex-1">
+                      <div className="mb-1 text-sm text-gray-500">PIC Name</div>
+                      <div className="font-medium">
+                        {picName || "Not entered"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <Phone className="mt-1 h-5 w-5 flex-shrink-0 text-gray-500" />
+                    <div className="flex-1">
+                      <div className="mb-1 text-sm text-gray-500">
+                        PIC Phone
+                      </div>
+                      <div className="font-medium">
+                        {picPhone || "Not entered"}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-start justify-between gap-4">
-                  <strong>Order:</strong>
-                  <span>{zonaWaktu || "Not selected"}</span>
+
+                <Separator />
+
+                {/* Employee Counts */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-gray-700">
+                    Employee Counts
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(counts).map(
+                      ([type, count]) =>
+                        count !== 0 && (
+                          <div
+                            key={type}
+                            className={`rounded-lg p-3 ${
+                              type === "PLNIP"
+                                ? "bg-blue-50"
+                                : type === "IPS"
+                                ? "bg-orange-50"
+                                : type === "KOP"
+                                ? "bg-green-50"
+                                : "bg-gray-50"
+                            }`}
+                          >
+                            <div className="mb-1 text-sm text-gray-500">
+                              {type}
+                            </div>
+                            <div className="text-lg font-semibold">{count}</div>
+                          </div>
+                        )
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-start justify-between gap-4">
-                  <strong>Drop Point:</strong>
-                  <span>{dropPoint || "Not selected"}</span>
-                </div>
-                <div className="flex items-start justify-between gap-4">
-                  <strong>PIC Name:</strong>
-                  <span>{picName || "Not entered"}</span>
-                </div>
-                <div className="flex items-start justify-between gap-4">
-                  <strong>PIC Phone:</strong>
-                  <span>{picPhone || "Not entered"}</span>
-                </div>
-                <div className="space-y-2">
-                  <strong>Employee Counts:</strong>
-                  <ul className="grid grid-cols-2 gap-2">
-                    {Object.entries(counts).map(([type, count]) => (
-                      <li key={type} className="flex items-center gap-2">
-                        <span>•</span>
-                        {type}: {count}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="space-y-2">
-                  <strong>Employees:</strong>
+
+                <Separator />
+
+                {/* Employees List */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-700">Employees</h3>
                   {Object.entries(employees).map(
                     ([type, empList]) =>
                       empList.length > 0 && (
-                        <div key={type} className="mt-3">
-                          <h4 className="mb-2 font-semibold">{type}</h4>
-                          <ul className="space-y-2">
+                        <div key={type} className="space-y-3">
+                          <h4 className="text-sm font-medium text-gray-600">
+                            {type === "PLNIP"
+                              ? "PLN INDONESIA POWER"
+                              : type === "IPS"
+                              ? "INDONESIA POWER SERVICES"
+                              : type === "KOP"
+                              ? "KOPERASI"
+                              : type === "RSU"
+                              ? "RUSAMAS SARANA USAHA"
+                              : type}
+                          </h4>
+                          <div
+                            className={`divide-y rounded-lg ${
+                              type === "PLNIP"
+                                ? "bg-blue-50"
+                                : type === "IPS"
+                                ? "bg-orange-50"
+                                : type === "KOP"
+                                ? "bg-green-50"
+                                : "bg-gray-50"
+                            }`}
+                          >
                             {empList.map((emp, index) => (
-                              <li
+                              <div
                                 key={index}
-                                className="flex items-center gap-2"
+                                className="p-3 first:rounded-t-lg last:rounded-b-lg"
                               >
-                                <span>•</span>
-                                {emp.name} - {emp.menu?.name || ""}{" "}
-                                {emp.note && `(${emp.note})`}
-                              </li>
+                                <div className="font-medium">{emp.name}</div>
+                                {(emp.menu?.name || emp.note) && (
+                                  <div className="mt-1 flex text-sm text-gray-500">
+                                    <div className="flex items-center">
+                                      <ForkKnife className="mr-1 h-3 w-3 flex-shrink-0 text-gray-500" />
+                                      <span>{emp.menu?.name}</span>
+                                      {emp.note && (
+                                        <span className="ml-1 text-gray-400">
+                                          • {emp.note}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             ))}
-                          </ul>
+                          </div>
                         </div>
                       )
                   )}

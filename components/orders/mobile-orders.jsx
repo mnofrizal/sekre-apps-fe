@@ -12,10 +12,15 @@ import {
   FileBox,
   Building2,
   Loader2,
+  Users,
+  User,
+  MapPin,
 } from "lucide-react";
 import { getAllOrders, updateOrderStatus } from "@/lib/api/order";
 import { format } from "date-fns";
 import { useSession } from "next-auth/react";
+import { getMealCategory, getStatusColor, getStatusName } from "@/lib/constant";
+import { Separator } from "../ui/separator";
 
 const orderIcons = {
   MEAL: UtensilsCrossed,
@@ -29,15 +34,6 @@ const orderColors = {
   TRANSPORT: "bg-blue-500",
   STATIONARY: "bg-yellow-500",
   ROOM: "bg-purple-500",
-};
-
-const statusStyles = {
-  PENDING_SUPERVISOR: "bg-yellow-100 text-yellow-800",
-  PENDING_GA: "bg-orange-100 text-orange-800",
-  PENDING_KITCHEN: "bg-purple-100 text-purple-800",
-  APPROVED: "bg-green-100 text-green-800",
-  REJECTED: "bg-red-100 text-red-800",
-  IN_PROGRESS: "bg-blue-100 text-blue-800",
 };
 
 const PENDING_STATUSES = [
@@ -179,12 +175,12 @@ export function MobileOrders() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="mb-4">
+              <Card className="mb-4 rounded-2xl">
                 <CardContent className="p-4">
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-2 flex items-start justify-between">
                     <div className="flex items-center">
                       <div
-                        className={`mr-2 rounded-full p-2 ${
+                        className={`mr-2 rounded-full p-2.5 ${
                           orderColors[order.type]
                         }`}
                       >
@@ -192,47 +188,63 @@ export function MobileOrders() {
                           <OrderIcon className="h-4 w-4 text-white" />
                         )}
                       </div>
-                      <h2 className="text-lg font-semibold">
-                        {order.judulPekerjaan}
-                      </h2>
+                      <div>
+                        <h2 className="text-lg font-semibold">
+                          {getMealCategory(order.requiredDate)}
+                        </h2>
+                        <p className="text-xs text-gray-500">#{order.id}</p>
+                      </div>
                     </div>
-                    <Badge className={statusStyles[order.status]}>
-                      {order.status}
+                    <Badge className={`${getStatusColor(order.status)}`}>
+                      {getStatusName(order.status)}
                     </Badge>
                   </div>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <p>Requester: {order.pic.name}</p>
-                    <p>Sub Bidang: {order.supervisor.subBidang}</p>
-                    <p>
-                      Date:{" "}
-                      {format(new Date(order.requestDate), "dd MMM yyyy HH:mm")}
-                    </p>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Users className="h-4 w-4" />
+                    {order.employeeOrders.length} Porsi
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <User className="h-4 w-4" />
+                    {order.supervisor.subBidang}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <MapPin className="h-4 w-4" />
+                    {order.dropPoint}
                   </div>
                   {canApprove(order) && (
-                    <div className="mt-4 flex justify-end space-x-2">
-                      <Button variant="outline" size="sm">
-                        Reject
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          session.user.role === "KITCHEN"
-                            ? handleApproveKitchen(order.id)
-                            : handleApprove(order.id)
-                        }
-                      >
-                        {session.user.role === "ADMIN" &&
-                        order.status === "PENDING_SUPERVISOR"
-                          ? "Approve as Supervisor"
-                          : session.user.role === "ADMIN" &&
-                            order.status === "PENDING_KITCHEN"
-                          ? "Approve as Kitchen"
-                          : session.user.role === "ADMIN" &&
-                            order.status === "PENDING_GA"
-                          ? "Approve"
-                          : "Approve"}
-                      </Button>
-                    </div>
+                    <>
+                      <Separator className="my-3" />
+                      <div className="mt-4 flex items-end justify-between space-x-2">
+                        <p className="text-sm text-gray-500">
+                          {format(new Date(order.requestDate), "HH:mm")} WIB
+                        </p>
+
+                        <div className="flex items-center space-x-2">
+                          <Button variant="outline" size="sm">
+                            Reject
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              session.user.role === "KITCHEN"
+                                ? handleApproveKitchen(order.id)
+                                : handleApprove(order.id)
+                            }
+                          >
+                            {session.user.role === "ADMIN" &&
+                            order.status === "PENDING_SUPERVISOR"
+                              ? "Approve as Supervisor"
+                              : session.user.role === "ADMIN" &&
+                                order.status === "PENDING_KITCHEN"
+                              ? "Approve as Kitchen"
+                              : session.user.role === "ADMIN" &&
+                                order.status === "PENDING_GA"
+                              ? "Approve"
+                              : "Approve"}
+                          </Button>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>

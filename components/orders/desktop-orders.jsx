@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getAllOrders } from "@/lib/api/order";
+import { getAllOrders, updateOrderStatus } from "@/lib/api/order";
 import { format } from "date-fns";
 import {
   UtensilsCrossed,
@@ -13,10 +13,40 @@ import {
   FileBox,
   Building2,
   AlertCircle,
+  Plus,
+  User,
+  Calendar,
+  MapPin,
+  Barcode,
+  Ruler,
+  Users,
+  CheckCircle,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { OrderApprovalFooter } from "./orders-approval-button";
 import { respondToRequest } from "@/lib/api/requests";
+import { getMealCategory, getStatusColor, getStatusName } from "@/lib/constant";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import Link from "next/link";
+import { Separator } from "../ui/separator";
+import { OrderDetailDialog } from "../meal-order/order-detail-dialog";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
 
 const orderTypes = {
   approval: {
@@ -37,41 +67,63 @@ const PENDING_STATUSES = [
   "PENDING_KITCHEN",
 ];
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case "PENDING_SUPERVISOR":
-    case "PENDING_GA":
-    case "PENDING_KITCHEN":
-      return "bg-yellow-100 text-yellow-800";
-    case "APPROVED":
-      return "bg-green-100 text-green-800";
-    case "REJECTED":
-      return "bg-red-100 text-red-800";
-    case "IN_PROGRESS":
-      return "bg-blue-100 text-blue-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
 export function DesktopOrders() {
+  const { toast } = useToast();
   const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   const isSecretary = session?.user?.role === "SECRETARY";
+  // Set default tab based on role
+  const [activeTab, setActiveTab] = useState(isSecretary ? "all" : "approval");
 
+  // Effect to handle initial fetch and check pending orders
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    const initialFetch = async () => {
+      try {
+        setLoading(true);
+        const response = await getAllOrders();
+        setOrders(response.data);
+
+        // If not secretary and no pending orders, switch to all tab
+        if (!isSecretary) {
+          const hasPendingOrders = response.data.some((order) =>
+            PENDING_STATUSES.includes(order.status)
+          );
+
+          if (!hasPendingOrders && activeTab === "approval") {
+            setActiveTab("all");
+          }
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initialFetch();
+  }, [isSecretary]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const response = await getAllOrders();
       setOrders(response.data);
+
+      // Check for pending orders after each fetch
+      if (!isSecretary) {
+        const hasPendingOrders = response.data.some((order) =>
+          PENDING_STATUSES.includes(order.status)
+        );
+
+        if (!hasPendingOrders && activeTab === "approval") {
+          setActiveTab("all");
+        }
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -79,45 +131,153 @@ export function DesktopOrders() {
     }
   };
 
-  const handleApprove = async (token) => {
-    console.log(token);
-    // Handle approval logic here
+  const handleOrderClick = (order) => {
+    setSelectedOrder(order);
+    setDialogOpen(true);
+  };
+
+  const handleApproveKitchen = async (order) => {
     try {
+      setLoading(true);
+      console.log(`Approving order with ID: ${order.id}`);
+      const response = await updateOrderStatus(order.id, "COMPLETED");
+
+      // Fetch fresh data
+      await fetchOrders();
+
+      // Show toast for successful approval
+      toast({
+        title: "Success",
+        description: "Request successfully approved",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error(
+        `Failed to approve order with ID: ${order.id}: ${error.message}`
+      );
+      toast({
+        title: "Error",
+        description: `Failed to approve order with ID: ${order.id}: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (token) => {
+    try {
+      setLoading(true);
       const response = await respondToRequest(token, true, "Request approved");
-      console.log(response);
-      fetchOrders();
+
+      // Update local state first
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.token === token
+            ? { ...order, status: response.data.status }
+            : order
+        )
+      );
+
+      // Fetch fresh data
+      await fetchOrders();
+
+      // Only handle tab switching for non-secretary roles
+      if (!isSecretary) {
+        // Check if there are any remaining orders in approval tab
+        const remainingPendingOrders = orders.filter(
+          (order) =>
+            PENDING_STATUSES.includes(order.status) && order.token !== token
+        );
+
+        // If no more pending orders, switch to "all" tab
+        if (remainingPendingOrders.length === 0 && activeTab === "approval") {
+          setActiveTab("all");
+        }
+      }
+
+      // Show toast for successful approval
+      toast({
+        title: "Success",
+        description: "Request successfully approved",
+        variant: "success",
+      });
     } catch (error) {
       console.error(error);
+      setError("Failed to approve request");
+      toast({
+        title: "Error",
+        description: "Failed to approve request",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleReject = async (token) => {
-    // Handle approval logic here
     try {
+      setLoading(true);
       const response = await respondToRequest(token, false, "Request rejected");
-      console.log(response);
-      fetchOrders();
+
+      // Update local state first
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.token === token
+            ? { ...order, status: response.data.status }
+            : order
+        )
+      );
+
+      // Fetch fresh data
+      await fetchOrders();
+
+      // Only handle tab switching for non-secretary roles
+      if (!isSecretary) {
+        // Check if there are any remaining orders in approval tab
+        const remainingPendingOrders = orders.filter(
+          (order) =>
+            PENDING_STATUSES.includes(order.status) && order.token !== token
+        );
+
+        // If no more pending orders, switch to "all" tab
+        if (remainingPendingOrders.length === 0 && activeTab === "approval") {
+          setActiveTab("all");
+        }
+      }
+
+      // Show toast for successful rejection
+      toast({
+        title: "Success",
+        description: "Request successfully rejected",
+        variant: "success",
+      });
     } catch (error) {
       console.error(error);
+      setError("Failed to reject request");
+      toast({
+        title: "Error",
+        description: "Failed to reject request",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    setOrders(
-      orders.map((order) =>
-        order.id === id
-          ? { ...order, status: "REJECTED", needsApproval: false }
-          : order
-      )
-    );
   };
 
   const filteredOrders = useMemo(() => {
     if (isSecretary) {
-      // For secretary, show all orders regardless of status in the "all" tab
       if (activeTab === "all") {
-        return orders;
+        // Show all orders except those with pending status
+        return orders.filter(
+          (order) => !PENDING_STATUSES.includes(order.status)
+        );
       }
-      // For other tabs, filter by type only
-      return orders.filter((order) => order.type === activeTab);
+      // For other tabs, filter by type and exclude pending status
+      return orders.filter(
+        (order) =>
+          order.type === activeTab && !PENDING_STATUSES.includes(order.status)
+      );
     }
 
     // Original filtering logic for other roles
@@ -163,22 +323,38 @@ export function DesktopOrders() {
     );
   }
 
-  console.log(filteredOrders);
-
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Semua Permintaan</h1>
-      <Tabs defaultValue="all" onValueChange={setActiveTab}>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Semua Permintaan</h1>
+        {session?.user?.role !== "KITCHEN" && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Buat Pesanan
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="p-3">
+              <Link
+                href="/dashboard/meal-order/list/add"
+                className="cursor-pointer rounded px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                Meal Order
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           {Object.entries(availableOrderTypes).map(([key, { label }]) => (
             <TabsTrigger key={key} value={key} className="relative">
               {label}
-              {!isSecretary && key === "approval" && (
+              {!isSecretary && key === "approval" && pendingCount > 0 && (
                 <Badge
                   variant="destructive"
-                  className={`ml-2 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center ${
-                    pendingCount === 0 ? "hidden" : ""
-                  }`}
+                  className="ml-2 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs"
                 >
                   {pendingCount}
                 </Badge>
@@ -202,47 +378,116 @@ export function DesktopOrders() {
                   >
                     <CardContent className="flex-grow p-6">
                       <div className="mb-4 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           {OrderIcon && (
-                            <OrderIcon
-                              className={`h-5 w-5 ${
-                                orderTypes[order.type].color
+                            <div
+                              className={`rounded-full p-2 ${
+                                orderTypes[order.type].bgColor
                               }`}
-                            />
+                            >
+                              <OrderIcon
+                                className={`h-6 w-6 ${
+                                  orderTypes[order.type].color
+                                }`}
+                              />
+                            </div>
                           )}
-                          <h2 className="text-xl font-semibold">
-                            {order.judulPekerjaan}
-                          </h2>
+                          <div>
+                            <h2 className="text-2xl font-bold">
+                              {getMealCategory(order.requiredDate)}
+                            </h2>
+                            <p className="text-sm text-gray-500">
+                              Order #{order.id}
+                            </p>
+                          </div>
                         </div>
-                        <Badge className={getStatusColor(order.status)}>
-                          {order.status}
+                        <Badge
+                          className={`${getStatusColor(
+                            order.status
+                          )} rounded-sm`}
+                        >
+                          {getStatusName(order.status)}
                         </Badge>
                       </div>
                       <div className="space-y-2">
-                        <p>
-                          <span className="font-medium">Requester:</span>{" "}
-                          {order.pic.name}
-                        </p>
-                        <p>
-                          <span className="font-medium">Sub Bidang:</span>{" "}
-                          {order.supervisor.subBidang}
-                        </p>
-                        <p>
-                          <span className="font-medium">Date:</span>{" "}
-                          {format(
-                            new Date(order.requestDate),
-                            "dd MMM yyyy HH:mm"
+                        <div className="flex flex-wrap gap-6 text-sm text-gray-500">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            {order.employeeOrders.length} Porsi
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            {order.supervisor.subBidang}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            {new Date(order.requestDate)
+                              .toLocaleString("id-ID", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })
+                              .replace(/\./g, ":")}{" "}
+                            WIB
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            {order.dropPoint}
+                          </div>
+                        </div>
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="mt-4 flex justify-between gap-3">
+                        <Button
+                          variant="outline"
+                          className="flex items-center gap-2"
+                          onClick={() => handleOrderClick(order)}
+                        >
+                          <Barcode className="h-4 w-4" />
+                          Detil Pesanan
+                        </Button>
+                        {session?.user?.role === "KITCHEN" &&
+                          order.status === "IN_PROGRESS" && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="flex items-center gap-2"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                  Selesaikan Pesanan
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Selesaikan Pesanan?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Pastikan Anda telah menyelesaikan pesanan
+                                    ini. Tindakan ini tidak dapat dibatalkan.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleApproveKitchen(order)}
+                                  >
+                                    Selesaikan
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           )}
-                        </p>
+                        <OrderApprovalFooter
+                          isSecretary={isSecretary}
+                          order={order}
+                          session={session}
+                          onApprove={handleApprove}
+                          onReject={handleReject}
+                        />
                       </div>
                     </CardContent>
-                    <OrderApprovalFooter
-                      isSecretary={isSecretary}
-                      order={order}
-                      session={session}
-                      onApprove={handleApprove}
-                      onReject={handleReject}
-                    />
                   </Card>
                 );
               })}
@@ -250,6 +495,11 @@ export function DesktopOrders() {
           )}
         </TabsContent>
       </Tabs>
+      <OrderDetailDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        order={selectedOrder}
+      />
     </div>
   );
 }

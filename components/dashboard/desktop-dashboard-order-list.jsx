@@ -11,11 +11,22 @@ import {
   Building2,
   CheckCircle,
   ClipboardX,
+  Barcode,
+  Users,
+  User,
+  Calendar,
+  MapPin,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getAllOrders } from "@/lib/api/order";
 import { format } from "date-fns";
 import Link from "next/link";
+import { getMealCategory, getStatusColor, getStatusName } from "@/lib/constant";
+import { OrderDetailDialog } from "../meal-order/order-detail-dialog";
+import { OrderApprovalFooter } from "../orders/orders-approval-button";
+import { useSession } from "next-auth/react";
+import { useToast } from "@/hooks/use-toast";
+import { respondToRequest } from "@/lib/api/requests";
 
 const orderTypes = {
   MEAL: { icon: UtensilsCrossed, color: "text-green-600" },
@@ -24,46 +35,113 @@ const orderTypes = {
   ROOM: { icon: Building2, color: "text-purple-600" },
 };
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case "PENDING_SUPERVISOR":
-      return "bg-yellow-100 text-yellow-800";
-    case "APPROVED":
-      return "bg-green-100 text-green-800";
-    case "REJECTED":
-      return "bg-red-100 text-red-800";
-    case "IN_PROGRESS":
-      return "bg-blue-100 text-blue-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
 export function DesktopDashboardOrders() {
+  const { toast } = useToast();
+  const { data: session } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllOrders();
+      setOrders(response.data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        const response = await getAllOrders();
-        setOrders(response.data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrders();
   }, []);
 
   // Filter orders that need approval (PENDING_SUPERVISOR status)
   const filteredOrders = orders.filter(
-    (order) => order.status === "PENDING_SUPERVISOR"
+    (order) =>
+      order.status === "PENDING_GA" || order.status === "PENDING_SUPERVISOR"
   );
+
+  const handleOrderClick = (order) => {
+    setSelectedOrder(order);
+    setDialogOpen(true);
+  };
+
+  const handleApprove = async (token) => {
+    try {
+      setLoading(true);
+      const response = await respondToRequest(token, true, "Request approved");
+
+      // Update local state first
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.token === token
+            ? { ...order, status: response.data.status }
+            : order
+        )
+      );
+
+      // Fetch fresh data
+      await fetchOrders();
+
+      // Show toast for successful approval
+      toast({
+        title: "Success",
+        description: "Request successfully approved",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error(error);
+      setError("Failed to approve request");
+      toast({
+        title: "Error",
+        description: "Failed to approve request",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReject = async (token) => {
+    try {
+      setLoading(true);
+      const response = await respondToRequest(token, false, "Request rejected");
+
+      // Update local state first
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.token === token
+            ? { ...order, status: response.data.status }
+            : order
+        )
+      );
+
+      // Fetch fresh data
+      await fetchOrders();
+
+      // Show toast for successful rejection
+      toast({
+        title: "Success",
+        description: "Request successfully rejected",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error(error);
+      setError("Failed to reject request");
+      toast({
+        title: "Error",
+        description: "Failed to reject request",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -134,53 +212,82 @@ export function DesktopDashboardOrders() {
               transition={{ duration: 0.5 }}
             >
               <Card className="mb-4 flex w-full flex-col rounded-2xl">
-                <CardContent className="flex-grow p-6">
+                <CardContent className="flex-grow p-4 px-5">
                   <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       {OrderIcon && (
                         <OrderIcon
-                          className={`h-5 w-5 ${orderTypes[order.type].color}`}
+                          className={`h-7 w-7 ${orderTypes[order.type].color}`}
                         />
                       )}
-                      <h2 className="text-xl font-semibold">
-                        {order.judulPekerjaan}
-                      </h2>
+                      <div>
+                        <h2 className="text-xl font-semibold">
+                          {getMealCategory(order.requiredDate)}
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                          Order #{order.id}
+                        </p>
+                      </div>
                     </div>
                     <Badge className={getStatusColor(order.status)}>
-                      {order.status}
+                      {getStatusName(order.status)}
                     </Badge>
                   </div>
                   <div className="space-y-2">
-                    <p>
-                      <span className="font-medium">Requester:</span>{" "}
-                      {order.pic.name}
-                    </p>
-                    <p>
-                      <span className="font-medium">Sub Bidang:</span>{" "}
-                      {order.supervisor.subBidang}
-                    </p>
-                    <p>
-                      <span className="font-medium">Date:</span>{" "}
-                      {format(new Date(order.requestDate), "dd MMM yyyy HH:mm")}
-                    </p>
+                    <div className="flex flex-wrap gap-6 text-sm text-gray-500">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        {order.employeeOrders.length} Porsi
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {order.supervisor.subBidang}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {new Date(order.requestDate)
+                          .toLocaleString("id-ID", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })
+                          .replace(/\./g, ":")}{" "}
+                        WIB
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        {order.dropPoint}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter className="rounded-b-2xl bg-muted p-4">
-                  <div className="flex w-full justify-end space-x-2">
-                    <Button
-                      variant="outline"
-                      className="rounded-xl text-red-500"
-                    >
-                      Reject
-                    </Button>
-                    <Button className="rounded-xl">Approve</Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 rounded-xl"
+                    onClick={() => handleOrderClick(order)}
+                  >
+                    <Barcode className="h-4 w-4" />
+                    Detil Pesanan
+                  </Button>
+                  <OrderApprovalFooter
+                    isSecretary={false}
+                    order={order}
+                    session={session}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                  />
                 </CardFooter>
               </Card>
             </motion.div>
           );
         })}
       </AnimatePresence>
+      <OrderDetailDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        order={selectedOrder}
+      />
     </div>
   );
 }
