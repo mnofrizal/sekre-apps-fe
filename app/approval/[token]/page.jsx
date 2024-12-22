@@ -22,6 +22,7 @@ import {
 } from "@/lib/api/requests";
 import { LoadingState } from "@/components/approval/loading-state";
 import { ErrorState } from "@/components/approval/error-state";
+import { getStatusColor, getStatusName } from "@/lib/constant";
 
 const getErrorDetails = (error) => {
   switch (error.code) {
@@ -216,7 +217,10 @@ const MagicLinkApproval = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Status</span>
-                    <Badge variant="outline">
+                    <Badge
+                      variant="outline"
+                      className={getStatusColor(request.status)}
+                    >
                       {" "}
                       {getStatusName(request.status)}
                     </Badge>
