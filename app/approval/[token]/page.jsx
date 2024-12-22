@@ -216,7 +216,10 @@ const MagicLinkApproval = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Status</span>
-                    <Badge variant="outline">{request.status}</Badge>
+                    <Badge variant="outline">
+                      {" "}
+                      {getStatusName(request.status)}
+                    </Badge>
                   </div>
                   <div className="flex items-center justify-center text-muted-foreground">
                     <motion.div

@@ -233,7 +233,7 @@ export function MobileOrders() {
                           >
                             {session.user.role === "ADMIN" &&
                             order.status === "PENDING_SUPERVISOR"
-                              ? "Approve as Supervisor"
+                              ? "Approve as ASMAN"
                               : session.user.role === "ADMIN" &&
                                 order.status === "PENDING_KITCHEN"
                               ? "Approve as Kitchen"

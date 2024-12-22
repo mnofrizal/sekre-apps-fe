@@ -14,7 +14,7 @@ const getApproveButtonText = (role, status) => {
   if (role !== "ADMIN") return "Approve";
 
   const statusToText = {
-    PENDING_SUPERVISOR: "Approve as Supervisor",
+    PENDING_SUPERVISOR: "Approve as ASMAN",
     PENDING_KITCHEN: "Approve as Kitchen",
     PENDING_GA: "Approve",
   };
