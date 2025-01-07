@@ -9,6 +9,13 @@ export default withAuth(
     const isAuthPage = pathname.startsWith("/login");
     const isPublicPage = pathname === "/" || pathname === "/about";
 
+    // Check token expiration
+    if (token?.exp && Date.now() >= token.exp * 1000) {
+      // Token has expired, redirect to login
+      const from = encodeURIComponent(pathname);
+      return NextResponse.redirect(new URL(`/login?from=${from}`, req.url));
+    }
+
     // Redirect authenticated users away from auth pages
     if (isAuth && isAuthPage) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
@@ -24,20 +31,11 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => true, // We'll handle authorization in the middleware function
+      authorized: ({ token }) => true,
     },
   }
 );
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
