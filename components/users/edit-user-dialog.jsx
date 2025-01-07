@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Loader2, Phone } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,15 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createUser } from "@/lib/api/users";
+import { updateUser } from "@/lib/api/users";
 import { useToast } from "@/hooks/use-toast";
 
 const roles = ["ADMIN", "SECRETARY", "KITCHEN"];
 
-export function AddUserDialog({ children, onSuccess }) {
-  const [open, setOpen] = useState(false);
+export function EditUserDialog({ user, open, onOpenChange, onSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
   const { toast } = useToast();
 
   const {
@@ -41,12 +40,11 @@ export function AddUserDialog({ children, onSuccess }) {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      username: "",
-      email: "",
-      password: "",
-      name: "",
-      role: "ADMIN",
-      phone: "",
+      username: user.username,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      phone: user.phone,
     },
   });
 
@@ -55,35 +53,39 @@ export function AddUserDialog({ children, onSuccess }) {
       setIsLoading(true);
       setError("");
 
-      await createUser(data);
+      await updateUser(user.id, data);
 
-      setOpen(false);
+      onOpenChange(false);
       reset();
       onSuccess?.();
       toast({
         title: "Success",
-        description: "User created successfully",
+        description: "User updated successfully",
       });
     } catch (err) {
-      console.log({ err });
       if (err.errors) {
         setError(err.errors.map((error) => error.message));
       } else {
-        setError([err.message || "Failed to create user"]);
+        setError([err.message || "Failed to update user"]);
       }
+      toast({
+        title: "Error",
+        description: err.message || "Failed to update user",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New User</DialogTitle>
+          <DialogTitle>Edit User</DialogTitle>
           <DialogDescription>
-            Create a new user account. All fields are required.
+            Update user information. Leave password blank to keep current
+            password.
           </DialogDescription>
         </DialogHeader>
 
@@ -137,7 +139,7 @@ export function AddUserDialog({ children, onSuccess }) {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="phone" className="text-right">
-                Nomor Hp
+                Nomor HP
               </Label>
               <Input
                 id="phone"
@@ -147,6 +149,7 @@ export function AddUserDialog({ children, onSuccess }) {
                 disabled={isLoading}
               />
             </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="password" className="text-right">
                 Password
@@ -155,7 +158,8 @@ export function AddUserDialog({ children, onSuccess }) {
                 id="password"
                 type="password"
                 className="col-span-3"
-                {...register("password", { required: true })}
+                {...register("password")}
+                placeholder="Leave blank to keep current"
                 disabled={isLoading}
               />
             </div>
@@ -166,7 +170,7 @@ export function AddUserDialog({ children, onSuccess }) {
               </Label>
               <Select
                 onValueChange={(value) => setValue("role", value)}
-                defaultValue="ADMIN"
+                defaultValue={user.role}
                 disabled={isLoading}
               >
                 <SelectTrigger className="col-span-3">
@@ -187,7 +191,7 @@ export function AddUserDialog({ children, onSuccess }) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
               Cancel
@@ -196,10 +200,10 @@ export function AddUserDialog({ children, onSuccess }) {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  Updating...
                 </>
               ) : (
-                "Create User"
+                "Update User"
               )}
             </Button>
           </DialogFooter>

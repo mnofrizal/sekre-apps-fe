@@ -40,7 +40,7 @@ import {
 import Link from "next/link";
 import { OrderDetailDialog } from "./order-detail-dialog";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { deleteOrder, getAllOrders } from "@/lib/api/order";
+import { deleteOrder, exportOrder, getAllOrders } from "@/lib/api/order";
 import { format } from "date-fns";
 import {
   FRONTEND_BASE_URL,
@@ -158,6 +158,39 @@ export function DesktopOrderList() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const data = await exportOrder();
+      const url = window.URL.createObjectURL(data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `meal_orders_${new Date()
+        .toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+        .replace(/\//g, "")}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Orders have been successfully exported!",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Error exporting orders:", error);
+      toast({
+        title: "Error",
+        description: `Error exporting orders, error: ${error}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCopyLink = (order) => {
     const findLink = (status, type) =>
       order.status === status
@@ -247,7 +280,7 @@ export function DesktopOrderList() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Meal Order List</h1>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExport}>
             <FileDown className="h-4 w-4" />
             Export
           </Button>

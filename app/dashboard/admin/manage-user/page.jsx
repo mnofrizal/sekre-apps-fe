@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus } from "lucide-react";
+import { FileDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserTable } from "@/components/users/user-table";
 import { UserSearch } from "@/components/users/user-search";
 import { AddUserDialog } from "@/components/users/add-user-dialog";
-import { getUsers } from "@/lib/api/users";
+import { exportUser, getUsers } from "@/lib/api/users";
 import {
   Pagination,
   PaginationContent,
@@ -15,6 +15,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ManageUsers() {
   const [allUsers, setAllUsers] = useState([]);
@@ -23,6 +24,7 @@ export default function ManageUsers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const itemsPerPage = 10;
+  const { toast } = useToast();
 
   const fetchUsers = async () => {
     try {
@@ -71,6 +73,36 @@ export default function ManageUsers() {
     window.scrollTo(0, 0);
   };
 
+  const handleUserUpdate = () => {
+    fetchUsers(); // Refresh the user list
+  };
+
+  const handleExport = async () => {
+    let url;
+    try {
+      const blob = await exportUser();
+
+      // Double-check blob type
+      if (!(blob instanceof Blob)) {
+        throw new Error("Invalid response format");
+      }
+
+      url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "users.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error exporting users:", error);
+    } finally {
+      if (url) {
+        window.URL.revokeObjectURL(url);
+      }
+    }
+  };
+
   if (error) {
     return (
       <div className="flex h-[200px] items-center justify-center text-red-500">
@@ -83,7 +115,7 @@ export default function ManageUsers() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Manage Users</h1>
-        <AddUserDialog onSuccess={fetchUsers}>
+        <AddUserDialog onSuccess={handleUserUpdate}>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Add User
@@ -94,7 +126,8 @@ export default function ManageUsers() {
       <div className="flex items-center justify-between">
         <UserSearch onSearch={handleSearch} />
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <FileDown className="h-4 w-4" />
             Export
           </Button>
           <Button variant="outline" size="sm">
@@ -105,11 +138,11 @@ export default function ManageUsers() {
 
       {loading ? (
         <div className="flex h-[200px] items-center justify-center">
-          Loading...
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
         </div>
       ) : (
         <>
-          <UserTable users={paginatedUsers} />
+          <UserTable users={paginatedUsers} onUserUpdate={handleUserUpdate} />
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
