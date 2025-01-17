@@ -62,7 +62,7 @@ export function DesktopOrderList() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState("All");
   const [subBidangFilter, setSubBidangFilter] = useState("All");
   const [sortConfig, setSortConfig] = useState({
@@ -275,6 +275,26 @@ export function DesktopOrderList() {
     );
   };
 
+  const getEntityQuantities = (employeeOrders) => {
+    const entityTotals = {};
+    if (!employeeOrders) return entityTotals;
+
+    employeeOrders.forEach((employee) => {
+      if (!employee || !employee.entity || !employee.orderItems) return;
+
+      if (!entityTotals[employee.entity]) {
+        entityTotals[employee.entity] = 0;
+      }
+
+      employee.orderItems.forEach((item) => {
+        if (item && typeof item.quantity === "number") {
+          entityTotals[employee.entity] += item.quantity;
+        }
+      });
+    });
+    return entityTotals;
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -350,7 +370,7 @@ export function DesktopOrderList() {
                     onClick={() => handleOrderClick(order)}
                     className="font-semibold text-gray-800 hover:underline"
                   >
-                    #{order.id}
+                    #IH{order.id.toString().slice(-4).toUpperCase()}
                   </button>
                 </TableCell>
                 <TableCell className="text-gray-800">
@@ -361,7 +381,24 @@ export function DesktopOrderList() {
                     onClick={() => handleOrderClick(order)}
                     className="text-primary hover:underline"
                   >
-                    {order.employeeOrders.length} Porsi
+                    {(() => {
+                      console.log("employeeOrders:", order.employeeOrders);
+                      const entityTotals = getEntityQuantities(
+                        order.employeeOrders
+                      );
+                      console.log("entityTotals:", entityTotals);
+                      const totalPorsi = Object.values(entityTotals).reduce(
+                        (sum, qty) => sum + qty,
+                        0
+                      );
+                      console.log("totalPorsi:", totalPorsi);
+                      const entityBreakdown = Object.entries(entityTotals)
+                        .map(([entity, qty]) => `${entity}: ${qty}`)
+                        .join(", ");
+                      return totalPorsi > 0
+                        ? `${totalPorsi} Porsi`
+                        : order.employeeOrders.length + " Porsi";
+                    })()}
                   </button>
                 </TableCell>
                 <TableCell>
@@ -394,9 +431,9 @@ export function DesktopOrderList() {
                 </TableCell>
                 <TableCell className="text-gray-800">
                   {format(new Date(order.requestDate), "dd MMM yyyy")}
-                  <div className="text-xs text-muted-foreground">
+                  {/* <div className="text-xs text-muted-foreground">
                     {format(new Date(order.requestDate), "HH:mm")}
-                  </div>
+                  </div> */}
                 </TableCell>
                 <TableCell>
                   <Badge
