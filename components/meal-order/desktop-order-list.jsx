@@ -12,7 +12,15 @@ import {
   Copy,
   LucideLink,
   Eye,
+  Calendar as CalendarIcon,
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,7 +49,6 @@ import Link from "next/link";
 import { OrderDetailDialog } from "./order-detail-dialog";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { deleteOrder, exportOrder, getAllOrders } from "@/lib/api/order";
-import { format } from "date-fns";
 import {
   FRONTEND_BASE_URL,
   getMealCategory,
@@ -65,14 +72,27 @@ export function DesktopOrderList() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState("All");
   const [subBidangFilter, setSubBidangFilter] = useState("All");
+  const [dateRange, setDateRange] = useState({
+    from: undefined,
+    to: undefined,
+  });
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: "ascending",
   });
+  const [uniqueSubBidangs, setUniqueSubBidangs] = useState([]);
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  useEffect(() => {
+    // Extract unique subbidangs from orders
+    const subBidangs = [
+      ...new Set(orders.map((order) => order.supervisor.subBidang)),
+    ].sort();
+    setUniqueSubBidangs(subBidangs);
+  }, [orders]);
 
   const fetchOrders = async () => {
     try {
@@ -87,22 +107,40 @@ export function DesktopOrderList() {
   };
 
   const filteredOrders = useMemo(() => {
-    return orders.filter(
-      (order) =>
-        (order.judulPekerjaan
+    return orders.filter((order) => {
+      const matchesSearch =
+        order.judulPekerjaan
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
-          order.supervisor.name
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          order.supervisor.subBidang
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase())) &&
-        (statusFilter === "All" || order.status === statusFilter) &&
-        (subBidangFilter === "All" ||
-          order.supervisor.subBidang === subBidangFilter)
-    );
-  }, [orders, searchQuery, statusFilter, subBidangFilter]);
+        order.supervisor.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        order.supervisor.subBidang
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "All" || order.status === statusFilter;
+
+      const matchesSubBidang =
+        subBidangFilter === "All" ||
+        order.supervisor.subBidang === subBidangFilter;
+
+      const matchesDateRange =
+        !dateRange?.from ||
+        !dateRange?.to ||
+        (dateRange?.from &&
+          dateRange?.to &&
+          isWithinInterval(new Date(order.requestDate), {
+            start: startOfDay(dateRange.from),
+            end: endOfDay(dateRange.to),
+          }));
+
+      return (
+        matchesSearch && matchesStatus && matchesSubBidang && matchesDateRange
+      );
+    });
+  }, [orders, searchQuery, statusFilter, subBidangFilter, dateRange]);
 
   const sortedOrders = useMemo(() => {
     let sortableOrders = [...filteredOrders];
@@ -334,6 +372,53 @@ export function DesktopOrderList() {
             <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={subBidangFilter} onValueChange={setSubBidangFilter}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Filter by Subbidang" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Subbidang</SelectItem>
+            {uniqueSubBidangs.map((subBidang) => (
+              <SelectItem key={subBidang} value={subBidang}>
+                {subBidang}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={`w-[250px] justify-start text-left font-normal ${
+                !dateRange?.from && "text-muted-foreground"
+              }`}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateRange?.from ? (
+                dateRange?.to ? (
+                  <>
+                    {format(dateRange.from, "LLL dd, y")} -{" "}
+                    {format(dateRange.to, "LLL dd, y")}
+                  </>
+                ) : (
+                  format(dateRange.from, "LLL dd, y")
+                )
+              ) : (
+                <span>Pick a date range</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={dateRange?.from}
+              selected={dateRange || { from: undefined, to: undefined }}
+              onSelect={setDateRange}
+              numberOfMonths={2}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="rounded-lg border shadow-sm">
@@ -395,9 +480,16 @@ export function DesktopOrderList() {
                       const entityBreakdown = Object.entries(entityTotals)
                         .map(([entity, qty]) => `${entity}: ${qty}`)
                         .join(", ");
-                      return totalPorsi > 0
-                        ? `${totalPorsi} Porsi`
-                        : order.employeeOrders.length + " Porsi";
+                      return totalPorsi > 0 ? (
+                        <span>
+                          {totalPorsi} Porsi{" "}
+                          {/* <div className="text-xs text-muted-foreground">
+                            {entityBreakdown}
+                          </div> */}
+                        </span>
+                      ) : (
+                        order.employeeOrders.length + " Porsi"
+                      );
                     })()}
                   </button>
                 </TableCell>
@@ -431,9 +523,9 @@ export function DesktopOrderList() {
                 </TableCell>
                 <TableCell className="text-gray-800">
                   {format(new Date(order.requestDate), "dd MMM yyyy")}
-                  {/* <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     {format(new Date(order.requestDate), "HH:mm")}
-                  </div> */}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Badge
