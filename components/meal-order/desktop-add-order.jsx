@@ -40,7 +40,7 @@ const zonaWaktuOrder = [
   { name: "Sarapan", time: "23:00:00.000Z" }, // Breakfast at 6 AM WIB (11 PM UTC previous day)
   { name: "Makan Siang", time: "05:00:00.000Z" }, // Lunch at 12 PM WIB (5 AM UTC)
   { name: "Makan Sore", time: "09:00:00.000Z" }, // Afternoon meal at 4 PM WIB (9 AM UTC)
-  { name: "Makan Malam", time: "12:00:00.000Z" }, // Dinner at 7 PM WIB (12 PM UTC)
+  { name: "Makan Malam", time: "16:59:00.000Z" }, // Dinner at 11:59 PM WIB (4:59 PM UTC)
 ];
 
 export default function AddOrder() {
