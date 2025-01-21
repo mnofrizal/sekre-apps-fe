@@ -24,11 +24,13 @@ import {
   confirmDelivery,
   ERROR_CODES,
   respondToRequest,
+  processOrder,
 } from "@/lib/api/requests";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingState } from "@/components/approval/loading-state";
 import { ErrorState } from "@/components/approval/error-state";
-import { getMealCategory } from "@/lib/constant";
+import { getMealCategory, getStatusColor, getStatusName } from "@/lib/constant";
+import { Badge } from "@/components/ui/badge";
 
 const getErrorDetails = (error) => {
   switch (error.code) {
@@ -85,6 +87,8 @@ export default function DeliveryConfirmation() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [orderDetails, setOrderDetails] = useState(null);
+  const [isProcessed, setIsProcessed] = useState(false);
+  const [showProcessDialog, setShowProcessDialog] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -94,6 +98,9 @@ export default function DeliveryConfirmation() {
       console.log(response.data);
       // Transform the data to match our UI needs
       const request = response.data.request;
+
+      const requestId = response.data.requestId;
+
       const items = request.employeeOrders.flatMap((order) =>
         order.orderItems.map((item) => ({
           name: item.menuItem.name,
@@ -104,7 +111,8 @@ export default function DeliveryConfirmation() {
       );
 
       setOrderDetails({
-        orderId: request.requestId,
+        orderId: requestId,
+        status: request.status,
         items,
         total: `${items.length} item${items.length > 1 ? "s" : ""}`,
         deliveryAddress: request.dropPoint,
@@ -220,7 +228,22 @@ export default function DeliveryConfirmation() {
   const handleFinish = async () => {
     try {
       setLoading(true);
-      const response = await respondToRequest(token, true, "Request delivered");
+
+      // Convert captured image to dataURL and log payload
+      if (capturedImage) {
+        console.log("Payload being sent:", {
+          token,
+          image: capturedImage,
+          message: "Request delivered",
+        });
+      }
+
+      const response = await respondToRequest(
+        token,
+        true,
+        "Request delivered",
+        capturedImage
+      );
       // const response = { success: true }; // Dummy response
       if (!response.success) {
         throw new Error(response.message || "Gagal mengkonfirmasi pengiriman");
@@ -267,10 +290,17 @@ export default function DeliveryConfirmation() {
       </header>
 
       <main className="flex flex-grow flex-col justify-start overflow-y-auto p-4">
-        <Card className="mb-6">
+        <div
+          className={`inline-flex items-center justify-center  px-2.5 py-3 text-sm rounded-t-lg  font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${getStatusColor(
+            orderDetails.status
+          )}`}
+        >
+          {getStatusName(orderDetails.status)}
+        </div>
+        <Card className="mb-4 rounded-lg rounded-t-none border-t-0">
           <CardHeader>
             <CardTitle>{`Ringkasan Pesanan ${orderDetails.pesananType}`}</CardTitle>
-            <CardDescription>Pesanan {orderDetails.orderId}</CardDescription>
+            <CardDescription>Pesanan #{orderDetails.orderId}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -291,29 +321,33 @@ export default function DeliveryConfirmation() {
                   </span>
                 </div>
               ))}
-              <div className="space-y-2 border-t pt-2 text-sm text-muted-foreground">
+              <div className="space-y-2 border-t pt-2 text-sm">
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
                   <span>{orderDetails.total}</span>
                 </div>
-                <div>
+                <div className="">
                   <p>Alamat Pengiriman:</p>
-                  <p>{orderDetails.deliveryAddress}</p>
+                  <p className="text-muted-foreground">
+                    {orderDetails.deliveryAddress}
+                  </p>
                 </div>
-                <div>
+                <div className="">
                   <p>Waktu Pengiriman:</p>
-                  <p>{orderDetails.requiredDate}</p>
+                  <p className="text-muted-foreground">
+                    {orderDetails.requiredDate}
+                  </p>
                 </div>
                 <div className="space-y-2 border-t pt-2">
                   <div>
                     <p className="font-medium">PIC:</p>
-                    <p>
+                    <p className="text-muted-foreground">
                       {orderDetails.pic.name} ({orderDetails.pic.nomorHp})
                     </p>
                   </div>
                   <div>
                     <p className="font-medium">ASMAN:</p>
-                    <p>
+                    <p className="text-muted-foreground">
                       {orderDetails.supervisor.name} (
                       {orderDetails.supervisor.nomorHp})
                     </p>
@@ -327,118 +361,178 @@ export default function DeliveryConfirmation() {
           </CardContent>
         </Card>
 
-        <Dialog
-          open={dialogOpen}
-          onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (open) {
-              // Automatically open camera when dialog opens
-              handleOpenCamera();
-            } else {
-              // Clean up camera stream when dialog closes
-              stopCamera();
-              setCapturedImage(null);
-              setCaptureTime(null);
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button size="lg" className="w-full rounded-2xl p-6">
-              <Check className="mr-2 h-5 w-5" /> SELESAIKAN PESANAN
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+        <Dialog open={showProcessDialog} onOpenChange={setShowProcessDialog}>
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle>Konfirmasi Pengiriman</DialogTitle>
+              <DialogTitle>Konfirmasi Proses Pesanan</DialogTitle>
               <DialogDescription>
-                Ambil foto untuk konfirmasi pengiriman.
+                Apakah Anda yakin ingin memproses pesanan ini?
               </DialogDescription>
             </DialogHeader>
-            <div className="mt-4">
-              {showCamera ? (
-                <div className="relative">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="aspect-square w-full rounded-lg object-cover"
-                    onLoadedMetadata={() =>
-                      console.log("Video metadata loaded")
-                    }
-                    onPlay={() => console.log("Video element started playing")}
-                    onError={(e) => {
-                      console.error("Video element error:", e);
-                      setError("Gagal menampilkan kamera");
-                      setShowCamera(false);
-                    }}
-                  />
-                </div>
-              ) : capturedImage ? (
-                <div className="space-y-2">
-                  <img
-                    src={capturedImage || "/placeholder.svg"}
-                    alt="Captured"
-                    className="aspect-square w-full rounded-lg object-cover"
-                  />
-                  <p className="text-center text-sm text-muted-foreground">
-                    diambil pada: {captureTime}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  {error && (
-                    <p className="mb-4 text-center text-destructive">{error}</p>
-                  )}
-                  <Button onClick={handleOpenCamera} className="w-full">
-                    <Camera className="mr-2 h-5 w-5" /> Ambil Foto
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 space-y-4">
-              {showCamera ? (
-                <Button
-                  onClick={handleCapture}
-                  className="w-full rounded-xl p-6"
-                  size="lg"
-                  variant="secondary"
-                >
-                  <Camera className="mr-2 h-5 w-5" /> Ambil Foto
-                </Button>
-              ) : (
-                capturedImage && (
-                  <Button
-                    onClick={handleOpenCamera}
-                    className="w-full rounded-xl p-6"
-                    size="lg"
-                    variant="secondary"
-                  >
-                    <RefreshCcw className="mr-2 h-5 w-5" /> Ulangi Foto
-                  </Button>
-                )
-              )}
+            <div className="mt-4 flex justify-end gap-3">
               <Button
-                className="w-full rounded-xl p-6"
-                size="lg"
-                onClick={handleFinish}
-                disabled={!capturedImage || loading}
+                variant="outline"
+                onClick={() => setShowProcessDialog(false)}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Memproses...
-                  </>
-                ) : (
-                  <>
-                    <Check className="mr-2 h-5 w-5" />
-                    Konfirmasi Pengiriman
-                  </>
-                )}
+                <X className="mr-2 h-5 w-5" /> Batal
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    await processOrder(orderDetails.orderId);
+                    setIsProcessed(true);
+                    setShowProcessDialog(false);
+                    await fetchData(); // Refetch to get updated status
+                    toast({
+                      title: "Pesanan Diproses",
+                      description: "Pesanan telah siap untuk diselesaikan.",
+                    });
+                  } catch (err) {
+                    toast({
+                      title: "Error",
+                      description: err.message || "Gagal memproses pesanan",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                <Check className="mr-2 h-5 w-5" /> Proses Pesanan
               </Button>
             </div>
           </DialogContent>
         </Dialog>
+
+        <div className="space-y-4">
+          <Button
+            size="lg"
+            className="w-full rounded-2xl p-6"
+            onClick={() => setShowProcessDialog(true)}
+            disabled={isProcessed || orderDetails.status === "IN_PROGRESS"}
+          >
+            <Check className="mr-2 h-5 w-5" /> PROSES PESANAN
+          </Button>
+
+          <Dialog
+            open={dialogOpen}
+            onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (open) {
+                // Automatically open camera when dialog opens
+                handleOpenCamera();
+              } else {
+                // Clean up camera stream when dialog closes
+                stopCamera();
+                setCapturedImage(null);
+                setCaptureTime(null);
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button
+                size="lg"
+                className="w-full rounded-2xl p-6"
+                disabled={!isProcessed && orderDetails.status !== "IN_PROGRESS"}
+              >
+                <Check className="mr-2 h-5 w-5" /> SELESAIKAN PESANAN
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Konfirmasi Pengiriman</DialogTitle>
+                <DialogDescription>
+                  Ambil foto untuk konfirmasi pengiriman.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-4">
+                {showCamera ? (
+                  <div className="relative">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="aspect-square w-full rounded-lg object-cover"
+                      onLoadedMetadata={() =>
+                        console.log("Video metadata loaded")
+                      }
+                      onPlay={() =>
+                        console.log("Video element started playing")
+                      }
+                      onError={(e) => {
+                        console.error("Video element error:", e);
+                        setError("Gagal menampilkan kamera");
+                        setShowCamera(false);
+                      }}
+                    />
+                  </div>
+                ) : capturedImage ? (
+                  <div className="space-y-2">
+                    <img
+                      src={capturedImage || "/placeholder.svg"}
+                      alt="Captured"
+                      className="aspect-square w-full rounded-lg object-cover"
+                    />
+                    <p className="text-center text-sm text-muted-foreground">
+                      diambil pada: {captureTime}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    {error && (
+                      <p className="mb-4 text-center text-destructive">
+                        {error}
+                      </p>
+                    )}
+                    <Button onClick={handleOpenCamera} className="w-full">
+                      <Camera className="mr-2 h-5 w-5" /> Ambil Foto
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className="mt-4 space-y-4">
+                {showCamera ? (
+                  <Button
+                    onClick={handleCapture}
+                    className="w-full rounded-xl p-6"
+                    size="lg"
+                    variant="secondary"
+                  >
+                    <Camera className="mr-2 h-5 w-5" /> Ambil Foto
+                  </Button>
+                ) : (
+                  capturedImage && (
+                    <Button
+                      onClick={handleOpenCamera}
+                      className="w-full rounded-xl p-6"
+                      size="lg"
+                      variant="secondary"
+                    >
+                      <RefreshCcw className="mr-2 h-5 w-5" /> Ulangi Foto
+                    </Button>
+                  )
+                )}
+                <Button
+                  className="w-full rounded-xl p-6"
+                  size="lg"
+                  onClick={handleFinish}
+                  disabled={!capturedImage || loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-5 w-5" />
+                      Konfirmasi Pengiriman
+                    </>
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </main>
 
       <canvas ref={canvasRef} style={{ display: "none" }} />

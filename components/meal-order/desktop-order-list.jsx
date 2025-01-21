@@ -455,7 +455,7 @@ export function DesktopOrderList() {
                     onClick={() => handleOrderClick(order)}
                     className="font-semibold text-gray-800 hover:underline"
                   >
-                    #IH{order.id.toString().slice(-4).toUpperCase()}
+                    #{order.id}
                   </button>
                 </TableCell>
                 <TableCell className="text-gray-800">

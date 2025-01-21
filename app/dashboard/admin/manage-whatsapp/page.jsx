@@ -30,8 +30,13 @@ export default function WhatsAppNotificationSelection() {
   const [listGroups, setListGroups] = useState([]);
   const [selectedAdminGroup, setSelectedAdminGroup] = useState("");
   const [selectedKitchenGroup, setSelectedKitchenGroup] = useState("");
+  const [selectedNotifGroup, setSelectedNotifGroup] = useState("");
   const [loading, setLoading] = useState(true);
-  const [dbGroups, setDbGroups] = useState({ ADMIN: null, KITCHEN: null });
+  const [dbGroups, setDbGroups] = useState({
+    ADMIN: null,
+    KITCHEN: null,
+    NOTIF: null,
+  });
 
   const fetchAllGroups = async () => {
     try {
@@ -51,9 +56,13 @@ export default function WhatsAppNotificationSelection() {
         const kitchenGroup = dbResponse.data.find(
           (group) => group.type === "KITCHEN"
         );
+        const notifGroup = dbResponse.data.find(
+          (group) => group.type === "NOTIF"
+        );
         setDbGroups({
           ADMIN: adminGroup || null,
           KITCHEN: kitchenGroup || null,
+          NOTIF: notifGroup || null,
         });
       }
     } catch (error) {
@@ -80,7 +89,11 @@ export default function WhatsAppNotificationSelection() {
 
   const handleSave = async (groupType) => {
     const groupId =
-      groupType === "ADMIN" ? selectedAdminGroup : selectedKitchenGroup;
+      groupType === "ADMIN"
+        ? selectedAdminGroup
+        : groupType === "KITCHEN"
+        ? selectedKitchenGroup
+        : selectedNotifGroup;
     const groupName = getGroupName(listGroups, groupId);
 
     try {
@@ -107,7 +120,9 @@ export default function WhatsAppNotificationSelection() {
     const groupName =
       groupType === "ADMIN"
         ? getGroupName(listGroups, selectedAdminGroup)
-        : getGroupName(listGroups, selectedKitchenGroup);
+        : groupType === "KITCHEN"
+        ? getGroupName(listGroups, selectedKitchenGroup)
+        : getGroupName(listGroups, selectedNotifGroup);
 
     toast({
       title: "Test Notification Sent",
@@ -231,6 +246,50 @@ export default function WhatsAppNotificationSelection() {
               </Button>
             </div>
           </div>
+          <Separator className="my-4" />
+          <div className="space-y-4">
+            <Label
+              htmlFor="notif-group"
+              className="flex items-center space-x-2 text-sm font-medium"
+            >
+              <Bell className="h-5 w-5" />
+              <span>Notif Group</span>
+            </Label>
+            <Select
+              value={selectedNotifGroup}
+              onValueChange={setSelectedNotifGroup}
+            >
+              <SelectTrigger id="notif-group" className="h-10 w-full">
+                <SelectValue placeholder="Select notif group" />
+              </SelectTrigger>
+              <SelectContent>
+                {listGroups.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button
+                onClick={() => handleSave("NOTIF")}
+                disabled={!selectedNotifGroup}
+                size="lg"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+              <Button
+                onClick={() => handleTestNotification("NOTIF")}
+                variant="outline"
+                disabled={!selectedNotifGroup}
+                size="lg"
+              >
+                <Bell className="mr-2 h-4 w-4" />
+                Test Notification
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -241,7 +300,7 @@ export default function WhatsAppNotificationSelection() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <Card>
               <CardContent className="p-6">
                 <div className="flex flex-col items-center space-y-4">
@@ -264,8 +323,19 @@ export default function WhatsAppNotificationSelection() {
                 </div>
               </CardContent>
             </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center space-y-4">
+                  <Bell className="h-12 w-12 text-primary" />
+                  <h3 className="text-xl font-medium">Notif Group</h3>
+                  <span className="text-lg">
+                    {dbGroups.NOTIF?.name || "Not configured"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          {dbGroups.ADMIN && dbGroups.KITCHEN && (
+          {dbGroups.ADMIN && dbGroups.KITCHEN && dbGroups.NOTIF && (
             <div className="mt-6 flex items-center justify-center rounded-lg border bg-green-50 p-4 dark:bg-green-950/50">
               <CheckCircle className="mr-3 h-6 w-6 text-green-500" />
               <span className="text-sm font-medium text-green-600 dark:text-green-400">
