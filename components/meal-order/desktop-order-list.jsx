@@ -23,6 +23,7 @@ import {
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -288,8 +289,48 @@ export function DesktopOrderList() {
 
   if (loading) {
     return (
-      <div className="flex h-[200px] items-center justify-center">
-        Loading...
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-48" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-[150px]" />
+          <Skeleton className="h-10 w-[150px]" />
+          <Skeleton className="h-10 w-[250px]" />
+        </div>
+
+        <div className="rounded-lg border shadow-sm">
+          <div className="min-h-[400px] space-y-4 p-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-20" />
+                <Skeleton className="h-12 w-32" />
+                <Skeleton className="h-12 w-24" />
+                <Skeleton className="h-12 w-32" />
+                <Skeleton className="h-12 w-40" />
+                <Skeleton className="h-12 w-24" />
+                <Skeleton className="h-12 w-32" />
+                <Skeleton className="h-12 w-24" />
+                <Skeleton className="h-8 w-8" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-64" />
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+        </div>
       </div>
     );
   }

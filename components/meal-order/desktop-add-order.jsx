@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -31,11 +32,15 @@ import { getMenuItems } from "@/lib/api/menu";
 import { createOrder } from "@/lib/api/order";
 import { useToast } from "@/hooks/use-toast";
 
+// This array defines the meal time slots available for ordering in GMT+7 (WIB)
+// Each object contains:
+// - name: The Indonesian name for the meal time
+// - time: The UTC time for that meal in ISO format (7 hours behind WIB)
 const zonaWaktuOrder = [
-  { name: "Sarapan", time: "06:00:00.000Z" },
-  { name: "Makan Siang", time: "12:00:00.000Z" },
-  { name: "Makan Sore", time: "16:00:00.000Z" },
-  { name: "Makan Malam", time: "19:00:00.000Z" },
+  { name: "Sarapan", time: "23:00:00.000Z" }, // Breakfast at 6 AM WIB (11 PM UTC previous day)
+  { name: "Makan Siang", time: "05:00:00.000Z" }, // Lunch at 12 PM WIB (5 AM UTC)
+  { name: "Makan Sore", time: "09:00:00.000Z" }, // Afternoon meal at 4 PM WIB (9 AM UTC)
+  { name: "Makan Malam", time: "12:00:00.000Z" }, // Dinner at 7 PM WIB (12 PM UTC)
 ];
 
 export default function AddOrder() {
@@ -68,6 +73,7 @@ export default function AddOrder() {
   const [bidangOptions, setBidangOptions] = useState([]);
   const [menuOptions, setMenuOptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   // New state for asman
@@ -163,8 +169,64 @@ export default function AddOrder() {
 
   if (loading) {
     return (
-      <div className="flex h-[200px] items-center justify-center">
-        Loading...
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-6 items-start gap-6">
+          <Card className="col-span-4">
+            <CardHeader className="border-b bg-slate-100 p-5">
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Skeleton className="mb-2 h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div>
+                    <Skeleton className="mb-2 h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Skeleton className="mb-2 h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div>
+                    <Skeleton className="mb-2 h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+                  {Array(5)
+                    .fill()
+                    .map((_, i) => (
+                      <div key={i}>
+                        <Skeleton className="mb-2 h-4 w-20" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="col-span-2">
+            <CardHeader className="border-b bg-slate-100 p-5">
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -289,6 +351,7 @@ export default function AddOrder() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isFormValid) {
+      setSubmitting(true);
       try {
         const submittedData = {
           judulPekerjaan,
@@ -351,6 +414,8 @@ export default function AddOrder() {
       } catch (error) {
         console.error("Error submitting order:", error);
         // Handle error appropriately
+      } finally {
+        setSubmitting(false);
       }
     }
   };
@@ -496,8 +561,19 @@ export default function AddOrder() {
                   </div>
                 </CardContent>
               </Card>
-              <Button type="submit" className="w-full" disabled={!isFormValid}>
-                Submit Order
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!isFormValid || submitting}
+              >
+                {submitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    <span>Submitting...</span>
+                  </div>
+                ) : (
+                  "Submit Pesanan"
+                )}
               </Button>
             </form>
           </CardContent>
