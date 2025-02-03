@@ -28,10 +28,9 @@ import {
   User,
   X,
 } from "lucide-react";
-import { getSubBidangEmployees } from "@/lib/api/employees";
-import { getMenuItems } from "@/lib/api/menu";
 import { createOrder } from "@/lib/api/order";
 import { useToast } from "@/hooks/use-toast";
+import { useMealOrderStore } from "@/lib/store/meal-order-store";
 
 // This array defines the meal time slots available for ordering in GMT+7 (WIB)
 // Each object contains:
@@ -69,14 +68,25 @@ export default function AddOrder() {
   const [picName, setPicName] = useState("");
   const [picPhone, setPicPhone] = useState("");
 
-  // State for dynamic data
-  const [plnipNames, setPlnipNames] = useState({});
-  const [bidangOptions, setBidangOptions] = useState([]);
-  const [menuOptions, setMenuOptions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // State for form submission
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
   const [syncMenuEnabled, setSyncMenuEnabled] = useState({});
+
+  // Get data from Zustand store
+  const {
+    subBidangEmployees: plnipNames,
+    bidangOptions,
+    menuItems: menuOptions,
+    employeesLoading,
+    menuLoading,
+    employeesError,
+    menuError,
+    fetchSubBidangEmployees,
+    fetchMenuItems,
+  } = useMealOrderStore();
+
+  const loading = employeesLoading || menuLoading;
+  const error = employeesError || menuError;
 
   // Load form data from localStorage on component mount
   useEffect(() => {
@@ -144,30 +154,15 @@ export default function AddOrder() {
     nomorHp: "",
   });
 
-  // Fetch dynamic data
+  // Fetch data if not already in store
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        // Fetch sub bidang employees
-        const subBidangResponse = await getSubBidangEmployees();
-        setPlnipNames(subBidangResponse.data);
-        setBidangOptions(Object.keys(subBidangResponse.data));
-
-        // Fetch menu items - store full menu item objects
-        const menuResponse = await getMenuItems();
-        setMenuOptions(menuResponse.data.filter((item) => item.isAvailable));
-      } catch (err) {
-        setError(err.message);
-        console.error("Error fetching data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+    if (Object.keys(plnipNames).length === 0) {
+      fetchSubBidangEmployees();
+    }
+    if (menuOptions.length === 0) {
+      fetchMenuItems();
+    }
+  }, [plnipNames, menuOptions, fetchSubBidangEmployees, fetchMenuItems]);
 
   // Update asman when subBidang changes
   useEffect(() => {

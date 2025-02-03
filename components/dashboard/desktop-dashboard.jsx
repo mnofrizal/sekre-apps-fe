@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useMealOrderStore } from "@/lib/store/meal-order-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UtensilsCrossed, Car, Building2, FileBox } from "lucide-react";
 import Link from "next/link";
@@ -37,41 +38,25 @@ const containerVariants = {
 export function DesktopDashboard() {
   const { data: session } = useSession();
 
-  const [serviceRequests, setServiceRequests] = useState([
-    { type: "MEAL", count: 0 },
-    { type: "TRANSPORT", count: 0 },
-    { type: "ROOM", count: 0 },
-    { type: "STATIONARY", count: 0 },
-  ]);
-  const [loading, setLoading] = useState(true);
+  const { orders, ordersLoading: loading, fetchOrders } = useMealOrderStore();
+
+  const serviceRequests = useMemo(() => {
+    const counts = orders.reduce((acc, order) => {
+      acc[order.type] = (acc[order.type] || 0) + 1;
+      return acc;
+    }, {});
+
+    return [
+      { type: "MEAL", count: counts.MEAL || 0 },
+      { type: "TRANSPORT", count: counts.TRANSPORT || 0 },
+      { type: "ROOM", count: counts.ROOM || 0 },
+      { type: "STATIONARY", count: counts.STATIONARY || 0 },
+    ];
+  }, [orders]);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await getAllOrders();
-
-        // Count orders by type
-        const counts = response.data.reduce((acc, order) => {
-          acc[order.type] = (acc[order.type] || 0) + 1;
-          return acc;
-        }, {});
-
-        // Update service requests with actual counts
-        setServiceRequests([
-          { type: "MEAL", count: counts.MEAL || 0 },
-          { type: "TRANSPORT", count: counts.TRANSPORT || 0 },
-          { type: "ROOM", count: counts.ROOM || 0 },
-          { type: "STATIONARY", count: counts.STATIONARY || 0 },
-        ]);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
   const maxCount = Math.max(...serviceRequests.map((item) => item.count));
 
   const statisticsCards = serviceRequests.map((request) => {

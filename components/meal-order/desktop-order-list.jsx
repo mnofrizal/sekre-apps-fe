@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useMealOrderStore } from "@/lib/store/meal-order-store";
 import {
   Search,
   MoreVertical,
@@ -63,9 +64,13 @@ import { useSession } from "next-auth/react";
 export function DesktopOrderList() {
   const { toast } = useToast();
   const { data: session } = useSession();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const {
+    orders,
+    ordersLoading: loading,
+    ordersError: error,
+    fetchOrders,
+    deleteOrder: deleteOrderFromStore,
+  } = useMealOrderStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -85,7 +90,7 @@ export function DesktopOrderList() {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   useEffect(() => {
     // Extract unique subbidangs from orders
@@ -94,18 +99,6 @@ export function DesktopOrderList() {
     ].sort();
     setUniqueSubBidangs(subBidangs);
   }, [orders]);
-
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllOrders();
-      setOrders(response.data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
@@ -179,9 +172,7 @@ export function DesktopOrderList() {
   };
   const handleDelete = async (order) => {
     try {
-      await deleteOrder(order.id);
-      // Refresh the orders after deletion
-      fetchOrders();
+      await deleteOrderFromStore(order.id);
       toast({
         title: "Success",
         description: `Order telah berhasil dihapus!`,
