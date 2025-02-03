@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -75,6 +76,66 @@ export default function AddOrder() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [syncMenuEnabled, setSyncMenuEnabled] = useState({});
+
+  // Load form data from localStorage on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem("mealOrderFormData");
+    if (savedData) {
+      const data = JSON.parse(savedData);
+      setZonaWaktu(data.zonaWaktu || "");
+      setSubBidang(data.subBidang || "");
+      setJudulPekerjaan(data.judulPekerjaan || "");
+      setCounts(
+        data.counts || {
+          PLNIP: 0,
+          IPS: 0,
+          KOP: 0,
+          RSU: 0,
+          MITRA: 0,
+        }
+      );
+      setEmployees(
+        data.employees || {
+          PLNIP: [],
+          IPS: [],
+          KOP: [],
+          RSU: [],
+          MITRA: [],
+        }
+      );
+      setDropPoint(data.dropPoint || "");
+      setPicName(data.picName || "");
+      setPicPhone(data.picPhone || "");
+      setSyncMenuEnabled(data.syncMenuEnabled || {});
+    }
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const formData = {
+      zonaWaktu,
+      subBidang,
+      judulPekerjaan,
+      counts,
+      employees,
+      dropPoint,
+      picName,
+      picPhone,
+      syncMenuEnabled,
+    };
+    localStorage.setItem("mealOrderFormData", JSON.stringify(formData));
+  }, [
+    zonaWaktu,
+    subBidang,
+    judulPekerjaan,
+    counts,
+    employees,
+    dropPoint,
+    picName,
+    picPhone,
+    syncMenuEnabled,
+  ]);
 
   // New state for asman
   const [asman, setAsman] = useState({
@@ -248,10 +309,20 @@ export default function AddOrder() {
     if (field === "menu") {
       // Find the full menu item object
       const menuItem = menuOptions.find((item) => item.id === value);
-      updatedEmployees[type][index] = {
-        ...updatedEmployees[type][index],
-        menu: menuItem, // Store the full menu item object
-      };
+
+      if (syncMenuEnabled[type]) {
+        // Update all menus of this type if sync is enabled
+        updatedEmployees[type] = updatedEmployees[type].map((emp) => ({
+          ...emp,
+          menu: menuItem,
+        }));
+      } else {
+        // Update just this employee's menu
+        updatedEmployees[type][index] = {
+          ...updatedEmployees[type][index],
+          menu: menuItem,
+        };
+      }
     } else {
       updatedEmployees[type][index] = {
         ...updatedEmployees[type][index],
@@ -264,15 +335,27 @@ export default function AddOrder() {
   // Update the renderEmployeeInputs function to handle menu selection with IDs
   const renderEmployeeInputs = (type, count) => (
     <div key={type} className="space-y-4">
-      <div className="flex items-center space-x-2">
-        <h3 className="text-lg font-semibold">{type}</h3>
-        {counts[type] > 0 &&
-          (employees[type].length === counts[type] &&
-          employees[type].every((emp) => emp.name && emp.menu) ? (
-            <Check className="text-green-500" />
-          ) : (
-            <X className="text-red-500" />
-          ))}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <h3 className="text-lg font-semibold">{type}</h3>
+          {counts[type] > 0 &&
+            (employees[type].length === counts[type] &&
+            employees[type].every((emp) => emp.name && emp.menu) ? (
+              <Check className="text-green-500" />
+            ) : (
+              <X className="text-red-500" />
+            ))}
+        </div>
+        <div className="flex items-center space-x-2">
+          <Label htmlFor={`sync-${type}`}>Samakan Menu</Label>
+          <Switch
+            id={`sync-${type}`}
+            checked={syncMenuEnabled[type] || false}
+            onCheckedChange={(checked) => {
+              setSyncMenuEnabled((prev) => ({ ...prev, [type]: checked }));
+            }}
+          />
+        </div>
       </div>
       {Array(count)
         .fill()
@@ -398,6 +481,8 @@ export default function AddOrder() {
 
         try {
           const order = await createOrder(submittedData);
+          // Clear localStorage after successful submission
+          localStorage.removeItem("mealOrderFormData");
           toast({
             title: "Success",
             description: `Meal Order telah suskses dibuat!`,
