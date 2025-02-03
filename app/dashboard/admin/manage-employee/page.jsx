@@ -129,6 +129,7 @@ export default function ManageEmployees() {
       const searchString = searchTerm.toLowerCase();
       return (
         employee.nama?.toLowerCase().includes(searchString) ||
+        employee.sekretaris?.toLowerCase().includes(searchString) ||
         employee.nip?.toLowerCase().includes(searchString) ||
         employee.jabatan?.toLowerCase().includes(searchString) ||
         employee.bagian?.toLowerCase().includes(searchString) ||

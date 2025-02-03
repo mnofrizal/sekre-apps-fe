@@ -56,6 +56,7 @@ export function ImportExcelDialog({ onSuccess }) {
           const data = XLSX.utils.sheet_to_json(worksheet, {
             header: [
               "bagian",
+              "sekretaris",
               "name",
               "nip",
               "subBidang",
@@ -141,7 +142,8 @@ export function ImportExcelDialog({ onSuccess }) {
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Please select an Excel file (.xlsx) with the following columns:
-              bagian, name, nip, subBidang, jabatan, nomorHP, isAsman, email
+              bagian, sekretaris, name, nip, subBidang, jabatan, nomorHP,
+              isAsman, email
             </p>
             <div className="space-y-2">
               <input

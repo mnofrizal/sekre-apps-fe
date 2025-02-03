@@ -5,6 +5,15 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
   UtensilsCrossed,
   Car,
   FileBox,
@@ -43,6 +52,8 @@ export function DesktopDashboardOrders() {
   const [error, setError] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 3;
 
   const fetchOrders = async () => {
     try {
@@ -60,11 +71,20 @@ export function DesktopDashboardOrders() {
     fetchOrders();
   }, []);
 
-  // Filter orders that need approval (PENDING_SUPERVISOR status)
+  // Filter orders that need approval
   const filteredOrders = orders.filter(
     (order) =>
       order.status === "PENDING_GA" || order.status === "PENDING_SUPERVISOR"
   );
+
+  // Get current orders
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = filteredOrders.slice(
+    indexOfFirstOrder,
+    indexOfLastOrder
+  );
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
 
   const handleOrderClick = (order) => {
     setSelectedOrder(order);
@@ -190,7 +210,7 @@ export function DesktopDashboardOrders() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <h2 className="mr-2 text-xl font-semibold">Kelola Persutujuan</h2>
+          <h2 className="mr-2 text-xl font-semibold">Kelola Persetujuan</h2>
           <Badge variant="default">{filteredOrders.length}</Badge>
         </div>
         <Link
@@ -200,8 +220,8 @@ export function DesktopDashboardOrders() {
           See All
         </Link>
       </div>
-      <AnimatePresence>
-        {filteredOrders.map((order) => {
+      <AnimatePresence mode="wait">
+        {currentOrders.map((order) => {
           const OrderIcon = orderTypes[order.type]?.icon;
           return (
             <motion.div
@@ -283,6 +303,38 @@ export function DesktopDashboardOrders() {
           );
         })}
       </AnimatePresence>
+      {totalPages > 1 && (
+        <div className="flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((old) => Math.max(1, old - 1))}
+                  disabled={currentPage === 1}
+                />
+              </PaginationItem>
+              {[...Array(totalPages)].map((_, i) => (
+                <PaginationItem key={i + 1}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(i + 1)}
+                    isActive={currentPage === i + 1}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    setCurrentPage((old) => Math.min(totalPages, old + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
       <OrderDetailDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

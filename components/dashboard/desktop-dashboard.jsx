@@ -6,6 +6,13 @@ import { UtensilsCrossed, Car, Building2, FileBox } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "../ui/dropdown-menu";
 import { DesktopDashboardOrders } from "./desktop-dashboard-order-list";
 import { useSession } from "next-auth/react";
 import { getAllOrders } from "@/lib/api/order";
@@ -147,14 +154,39 @@ export function DesktopDashboard() {
               Berikut ringkasan aktivitas layanan Anda
             </p>
           </div>
-          <Link href="/dashboard/all-orders">
-            <Button
-              size="lg"
-              className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Go to All Orders
-            </Button>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="lg"
+                className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Quick Actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <Link href="/dashboard/all-orders">
+                <DropdownMenuItem className="cursor-pointer">
+                  All Orders
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator />
+              <Link href="/dashboard/meal-order/list/add">
+                <DropdownMenuItem className="cursor-pointer">
+                  Make Meal Order
+                </DropdownMenuItem>
+              </Link>
+              <Link href="#">
+                <DropdownMenuItem className="cursor-pointer">
+                  Transport Order
+                </DropdownMenuItem>
+              </Link>
+              <Link href="#">
+                <DropdownMenuItem className="cursor-pointer">
+                  Room Order
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <motion.div
           className="grid gap-7 md:grid-cols-2 lg:grid-cols-4"
