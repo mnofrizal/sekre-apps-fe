@@ -313,16 +313,67 @@ export function DesktopDashboardOrders() {
                   disabled={currentPage === 1}
                 />
               </PaginationItem>
-              {[...Array(totalPages)].map((_, i) => (
-                <PaginationItem key={i + 1}>
+
+              {/* First Page */}
+              <PaginationItem>
+                <PaginationLink
+                  onClick={() => setCurrentPage(1)}
+                  isActive={currentPage === 1}
+                >
+                  1
+                </PaginationLink>
+              </PaginationItem>
+
+              {/* Ellipsis after first page */}
+              {currentPage > 3 && (
+                <PaginationItem>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )}
+
+              {/* Current page and surrounding pages */}
+              {[...Array(totalPages)].map((_, i) => {
+                const pageNumber = i + 1;
+                if (
+                  pageNumber !== 1 &&
+                  pageNumber !== totalPages &&
+                  (pageNumber === currentPage ||
+                    pageNumber === currentPage - 1 ||
+                    pageNumber === currentPage + 1)
+                ) {
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationLink
+                        onClick={() => setCurrentPage(pageNumber)}
+                        isActive={currentPage === pageNumber}
+                      >
+                        {pageNumber}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                }
+                return null;
+              })}
+
+              {/* Ellipsis before last page */}
+              {currentPage < totalPages - 2 && (
+                <PaginationItem>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )}
+
+              {/* Last Page */}
+              {totalPages > 1 && (
+                <PaginationItem>
                   <PaginationLink
-                    onClick={() => setCurrentPage(i + 1)}
-                    isActive={currentPage === i + 1}
+                    onClick={() => setCurrentPage(totalPages)}
+                    isActive={currentPage === totalPages}
                   >
-                    {i + 1}
+                    {totalPages}
                   </PaginationLink>
                 </PaginationItem>
-              ))}
+              )}
+
               <PaginationItem>
                 <PaginationNext
                   onClick={() =>
