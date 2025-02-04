@@ -333,7 +333,7 @@ export function DesktopOrderList() {
           className="flex items-center space-x-1"
           onClick={() => requestSort(sortKey)}
         >
-          <span>{children}</span>
+          <span className="font-bold">{children}</span>
           {sortConfig.key === sortKey &&
             (sortConfig.direction === "ascending" ? (
               <ChevronUp className="h-4 w-4" />
@@ -473,7 +473,9 @@ export function DesktopOrderList() {
                 Request Date
               </SortableTableHeader>
               <SortableTableHeader sortKey="status">Status</SortableTableHeader>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="py-5 text-right font-bold">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

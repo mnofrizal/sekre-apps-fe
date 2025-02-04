@@ -12,7 +12,7 @@ export default function Navbar({ children }) {
     <motion.div
       initial={{ y: -50 }}
       animate={{ y: 0 }}
-      className="sticky top-0 z-10 border-b bg-background"
+      className="sticky top-0 z-10 border-b bg-background shadow-sm"
     >
       <div className="flex h-16 items-center gap-4 px-4">
         {children}

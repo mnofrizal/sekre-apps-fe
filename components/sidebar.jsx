@@ -294,7 +294,7 @@ export default function Sidebar() {
   const menuItems = getMenuItems(session.user.role);
 
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="flex h-full w-full flex-col bg-[#fafbff]">
       <div className="flex-grow overflow-y-auto p-4">
         <div className="mb-6">
           <div className="flex items-center gap-2 px-2">

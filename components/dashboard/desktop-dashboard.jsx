@@ -184,7 +184,7 @@ export function DesktopDashboard() {
               whileHover="hover"
               whileTap="tap"
             >
-              <Card className="flex h-[140px] flex-col justify-between rounded-2xl border-gray-200 shadow-sm">
+              <Card className="flex h-[140px] flex-col justify-between rounded-2xl">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-lg font-thin">
                     {card.title}
@@ -212,10 +212,30 @@ export function DesktopDashboard() {
                 whileTap="tap"
               >
                 <Link href={card.href} className="block h-[140px]">
-                  <Card className="h-full cursor-pointer rounded-2xl border-gray-200 shadow-sm transition-colors hover:bg-accent">
+                  <Card
+                    className={`h-full cursor-pointer rounded-2xl transition-all ${
+                      card.title === "Meal Orders"
+                        ? "bg-green-50 hover:bg-green-100"
+                        : card.title === "Transport"
+                        ? "bg-blue-50 hover:bg-blue-100"
+                        : card.title === "Room"
+                        ? "bg-purple-50 hover:bg-purple-100"
+                        : "bg-yellow-50 hover:bg-yellow-100"
+                    }`}
+                  >
                     <CardContent className="flex h-full flex-col items-center justify-center p-6">
                       <card.icon className={`h-8 w-8 ${card.color} mb-2`} />
-                      <h3 className="text-center text-lg font-semibold">
+                      <h3
+                        className={`text-center text-lg font-semibold ${
+                          card.title === "Meal Orders"
+                            ? "text-green-700"
+                            : card.title === "Transport"
+                            ? "text-blue-700"
+                            : card.title === "Room"
+                            ? "text-purple-700"
+                            : "text-yellow-700"
+                        }`}
+                      >
                         {card.title}
                       </h3>
                     </CardContent>
