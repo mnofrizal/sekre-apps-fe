@@ -65,6 +65,30 @@ export default function InputSection({
 }) {
   const [activeTypes, setActiveTypes] = useState({});
   const [showAllTypes, setShowAllTypes] = useState(true);
+  const [defaultSwitchesSet, setDefaultSwitchesSet] = useState(false);
+
+  // Set default switches on first render
+  useEffect(() => {
+    if (!defaultSwitchesSet) {
+      // Set all types except PLNIP to have "Isi Anonim" on by default
+      const defaultAnonymous = {};
+      Object.keys(TYPE_NAMES).forEach((type) => {
+        if (type !== "PLNIP") {
+          defaultAnonymous[type] = true;
+        }
+      });
+      setAnonymousEnabled(defaultAnonymous);
+
+      // Set all types to have "Samakan Menu" on by default
+      const defaultSync = {};
+      Object.keys(TYPE_NAMES).forEach((type) => {
+        defaultSync[type] = true;
+      });
+      setSyncMenuEnabled(defaultSync);
+
+      setDefaultSwitchesSet(true);
+    }
+  }, []);
 
   // Effect to sync other types with PLNIP when showAllTypes is false
   useEffect(() => {
@@ -546,7 +570,57 @@ export default function InputSection({
                             return;
                           }
                         }
+                        // Update the count first
                         handleCountChange(type, e.target.value);
+
+                        // Auto-fill entries based on the new count value
+                        const updatedEmployees = { ...employees };
+                        const newCount = parseInt(e.target.value) || 0;
+
+                        if (type === "PLNIP") {
+                          // For PLNIP, just resize the array maintaining existing entries
+                          const currentEntries = updatedEmployees[type] || [];
+                          updatedEmployees[type] = Array(newCount)
+                            .fill(null)
+                            .map(
+                              (_, i) =>
+                                currentEntries[i] || {
+                                  name: "",
+                                  menu: null,
+                                  note: "",
+                                }
+                            );
+                        } else {
+                          // For other types:
+                          // When "Isi Lengkap" is off, use PLNIP's first menu and anonymous names
+                          if (!showAllTypes) {
+                            const plnipFirstMenu = employees.PLNIP?.[0]?.menu;
+                            updatedEmployees[type] = Array(newCount).fill({
+                              name: `Pegawai ${type}`,
+                              menu: plnipFirstMenu,
+                              note: "",
+                            });
+                            // Enable anonymous mode
+                            setAnonymousEnabled((prev) => ({
+                              ...prev,
+                              [type]: true,
+                            }));
+                          } else {
+                            // When "Isi Lengkap" is on, just initialize empty entries
+                            const currentEntries = updatedEmployees[type] || [];
+                            updatedEmployees[type] = Array(newCount)
+                              .fill(null)
+                              .map(
+                                (_, i) =>
+                                  currentEntries[i] || {
+                                    name: "",
+                                    menu: null,
+                                    note: "",
+                                  }
+                              );
+                          }
+                        }
+                        setEmployees(updatedEmployees);
                       }}
                       className={cn(
                         activeTypes[type] &&
