@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -118,6 +119,15 @@ export default function InputSection({
     setActiveTypes(initialActiveTypes);
   }, [counts]); // Update when counts change
 
+  const [typeToReset, setTypeToReset] = useState(null);
+
+  useEffect(() => {
+    if (typeToReset) {
+      handleCountChange(typeToReset, "0");
+      setTypeToReset(null);
+    }
+  }, [typeToReset, handleCountChange]);
+
   const handleTypeToggle = (type) => {
     setActiveTypes((prev) => {
       const newState = {
@@ -125,9 +135,9 @@ export default function InputSection({
         [type]: !prev[type],
       };
 
-      // If turning off a type, reset its count to 0
+      // If turning off a type, queue it for reset
       if (!newState[type]) {
-        handleCountChange(type, "0");
+        setTypeToReset(type);
       } else if (!showAllTypes && type !== "PLNIP" && counts[type] > 0) {
         // When turning on a type and "Isi Lengkap" is off, automatically fill entries
         const updatedEmployees = { ...employees };
@@ -379,7 +389,7 @@ export default function InputSection({
 
   return (
     <div className="fixed left-64 top-[64px] flex h-[calc(100vh-64px)] w-[calc(100%-380px-256px)] flex-col border-none bg-[#fafbff] shadow-none">
-      <CardContent className="hover:scrollbar scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-y-auto p-6">
+      <ScrollArea className="flex-1 p-6">
         <form
           id="meal-order-form"
           onSubmit={handleSubmit}
@@ -657,7 +667,7 @@ export default function InputSection({
             </CardContent>
           </Card>
         </form>
-      </CardContent>
+      </ScrollArea>
     </div>
   );
 }
