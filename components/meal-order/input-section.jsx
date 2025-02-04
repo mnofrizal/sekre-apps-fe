@@ -168,9 +168,13 @@ export default function InputSection({
           {counts[type] > 0 &&
             (employees[type].length === counts[type] &&
             employees[type].every((emp) => emp.name && emp.menu) ? (
-              <Check className="text-green-500" />
+              <div className="rounded-full bg-green-100 p-1">
+                <Check className="h-3 w-3 text-green-500" />
+              </div>
             ) : (
-              <X className="text-red-500" />
+              <div className="rounded-full bg-red-100 p-1">
+                <X className="h-3 w-3 text-red-500" />
+              </div>
             ))}
         </div>
         <div className="flex items-center gap-4">
