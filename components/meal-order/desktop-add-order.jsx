@@ -439,6 +439,9 @@ export default function AddOrder() {
         picPhone={picPhone}
         counts={counts}
         employees={employees}
+        isFormValid={isFormValid}
+        submitting={submitting}
+        handleSubmit={handleSubmit}
       />
     </div>
   );

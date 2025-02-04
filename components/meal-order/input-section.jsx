@@ -379,8 +379,12 @@ export default function InputSection({
 
   return (
     <div className="fixed left-64 top-[64px] flex h-[calc(100vh-64px)] w-[calc(100%-380px-256px)] flex-col border-none bg-[#fafbff] shadow-none">
-      <CardContent className="flex-1 overflow-y-auto p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <CardContent className="hover:scrollbar scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-y-auto p-6">
+        <form
+          id="meal-order-form"
+          onSubmit={handleSubmit}
+          className="space-y-6"
+        >
           <Card className="p-6">
             <CardTitle className="mb-4 flex items-center gap-2 text-2xl font-semibold text-primary">
               <ClipboardList className="h-5 w-5" />
@@ -652,20 +656,6 @@ export default function InputSection({
               </div>
             </CardContent>
           </Card>
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={!isFormValid || submitting}
-          >
-            {submitting ? (
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                <span>Submitting...</span>
-              </div>
-            ) : (
-              "Submit Pesanan"
-            )}
-          </Button>
         </form>
       </CardContent>
     </div>
