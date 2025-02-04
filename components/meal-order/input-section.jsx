@@ -501,7 +501,7 @@ export default function InputSection({
               </div>
             </div>
           </Card>
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+          <div className="mb-6 grid grid-cols-2 gap-4 px-1 sm:grid-cols-3 md:grid-cols-5">
             {Object.entries(counts).map(([type, count]) => (
               <button
                 key={type}

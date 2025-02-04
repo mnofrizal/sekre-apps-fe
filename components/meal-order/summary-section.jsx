@@ -237,7 +237,7 @@ export default function SummarySection({
           <Button
             type="submit"
             form="meal-order-form"
-            className="w-full"
+            className="w-full py-5"
             disabled={!isFormValid || submitting}
           >
             {submitting ? (
