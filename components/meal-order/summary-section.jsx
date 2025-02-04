@@ -162,27 +162,64 @@ export default function SummarySection({
                             : "bg-gray-50"
                         }`}
                       >
-                        {empList.map((emp, index) => (
-                          <div
-                            key={index}
-                            className="p-3 first:rounded-t-lg last:rounded-b-lg"
-                          >
-                            <div className="font-medium">{emp.name}</div>
-                            {(emp.menu?.name || emp.note) && (
-                              <div className="mt-1 flex text-sm text-gray-500">
-                                <div className="flex items-center">
-                                  <ForkKnife className="mr-1 h-3 w-3 flex-shrink-0 text-gray-500" />
-                                  <span>{emp.menu?.name}</span>
-                                  {emp.note && (
-                                    <span className="ml-1 text-gray-400">
-                                      • {emp.note}
-                                    </span>
-                                  )}
-                                </div>
+                        {(() => {
+                          // Group entries by name and menu
+                          const groupedEntries = empList.reduce((acc, emp) => {
+                            const key = `${emp.name}-${emp.menu?.name || ""}-${
+                              emp.note || ""
+                            }`;
+                            if (!acc[key]) {
+                              acc[key] = { emp, count: 1 };
+                            } else {
+                              acc[key].count++;
+                            }
+                            return acc;
+                          }, {});
+
+                          return Object.values(groupedEntries).map(
+                            ({ emp, count }, index) => (
+                              <div
+                                key={index}
+                                className="p-3 first:rounded-t-lg last:rounded-b-lg"
+                              >
+                                {count >= 1 ? (
+                                  <div className="space-y-1">
+                                    <div className="text-lg font-medium">
+                                      {` ${emp.name}`}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {`${count}x ${emp.menu?.name}`}
+                                    </div>
+                                    {emp.note && (
+                                      <div className="text-sm text-gray-400">
+                                        • {emp.note}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <div className="font-medium">
+                                      {emp.name}
+                                    </div>
+                                    {(emp.menu?.name || emp.note) && (
+                                      <div className="mt-1 flex text-sm text-gray-500">
+                                        <div className="flex items-center">
+                                          <ForkKnife className="mr-1 h-3 w-3 flex-shrink-0 text-gray-500" />
+                                          <span>{emp.menu?.name}</span>
+                                          {emp.note && (
+                                            <span className="ml-1 text-gray-400">
+                                              • {emp.note}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        ))}
+                            )
+                          );
+                        })()}
                       </div>
                     </div>
                   )
