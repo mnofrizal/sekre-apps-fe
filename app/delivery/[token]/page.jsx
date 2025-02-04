@@ -286,7 +286,7 @@ export default function DeliveryConfirmation() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="bg-primary p-4 text-primary-foreground">
-        <h1 className="text-center text-2xl font-bold">Pengiriman Pesanan</h1>
+        <h1 className="text-center text-2xl font-bold">KONFIRMASI PESANAN</h1>
       </header>
 
       <main className="flex flex-grow flex-col justify-start overflow-y-auto p-4">
@@ -333,9 +333,15 @@ export default function DeliveryConfirmation() {
                   </p>
                 </div>
                 <div className="">
-                  <p>Waktu Pengiriman:</p>
+                  <p>Waktu Pemesanan:</p>
                   <p className="text-muted-foreground">
                     {orderDetails.requiredDate}
+                  </p>
+                </div>
+                <div className="">
+                  <p>Pesanan Untuk:</p>
+                  <p className="text-muted-foreground">
+                    {orderDetails.category}
                   </p>
                 </div>
                 <div className="space-y-2 border-t pt-2">
@@ -348,7 +354,7 @@ export default function DeliveryConfirmation() {
                   <div>
                     <p className="font-medium">ASMAN:</p>
                     <p className="text-muted-foreground">
-                      {orderDetails.supervisor.name} (
+                      {orderDetails.supervisor.name} ( 0
                       {orderDetails.supervisor.nomorHp})
                     </p>
                     <p className="text-sm text-muted-foreground">
