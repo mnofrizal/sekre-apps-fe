@@ -31,6 +31,7 @@ import {
 import { createOrder } from "@/lib/api/order";
 import { useToast } from "@/hooks/use-toast";
 import { useMealOrderStore } from "@/lib/store/meal-order-store";
+import { getMealCategory } from "@/lib/constant";
 
 // This array defines the meal time slots available for ordering in GMT+7 (WIB)
 // Each object contains:
@@ -431,21 +432,22 @@ export default function AddOrder() {
     if (isFormValid) {
       setSubmitting(true);
       try {
+        const today = new Date();
+        const selectedTime = zonaWaktuOrder.find(
+          (z) => z.name === zonaWaktu
+        )?.time;
+        if (selectedTime) {
+          const [hours, minutes] = selectedTime.split(":");
+          today.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+        const requiredDate = today.toISOString();
+
         const submittedData = {
           judulPekerjaan,
           type: "MEAL",
           requestDate: new Date().toISOString(),
-          requiredDate: (() => {
-            const today = new Date();
-            const selectedTime = zonaWaktuOrder.find(
-              (z) => z.name === zonaWaktu
-            )?.time;
-            if (selectedTime) {
-              const [hours, minutes] = selectedTime.split(":");
-              today.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
-            }
-            return today.toISOString();
-          })(),
+          requiredDate,
+          category: getMealCategory(requiredDate),
           dropPoint,
           // subBidang,
           supervisor: {

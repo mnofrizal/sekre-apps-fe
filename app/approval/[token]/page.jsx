@@ -200,6 +200,10 @@ const MagicLinkApproval = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-3 rounded-lg bg-gray-50 p-4">
                   <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Untuk</span>
+                    <span className="font-medium">{request.category}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
                     <span className="text-gray-600">Total Orders</span>
                     <span className="font-medium">
                       {request.employeeOrders.length} Porsi
@@ -210,11 +214,12 @@ const MagicLinkApproval = () => {
                     <span className="font-medium">{request.dropPoint}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Required Date</span>
+                    <span className="text-gray-600">Waktu Pesan</span>
                     <span className="font-medium">
-                      {format(new Date(request.requiredDate), "dd MMM HH:mm")}
+                      {format(new Date(request.requestDate), "dd MMM HH:mm")}
                     </span>
                   </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Status</span>
                     <Badge
