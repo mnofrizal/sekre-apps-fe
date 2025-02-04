@@ -213,14 +213,14 @@ export function DesktopDashboard() {
               >
                 <Link href={card.href} className="block h-[140px]">
                   <Card
-                    className={`h-full cursor-pointer rounded-2xl transition-all ${
+                    className={`h-full cursor-pointer rounded-2xl transition-all border-none shadow-md ${
                       card.title === "Meal Orders"
-                        ? "bg-green-50 hover:bg-green-100"
+                        ? "bg-gradient-to-br from-green-50 to-emerald-200 hover:from-green-100 hover:to-emerald-200"
                         : card.title === "Transport"
-                        ? "bg-blue-50 hover:bg-blue-100"
+                        ? "bg-gradient-to-br from-blue-50 to-sky-200 hover:from-blue-100 hover:to-sky-200"
                         : card.title === "Room"
-                        ? "bg-purple-50 hover:bg-purple-100"
-                        : "bg-yellow-50 hover:bg-yellow-100"
+                        ? "bg-gradient-to-br from-purple-50 to-violet-200 hover:from-purple-100 hover:to-violet-200"
+                        : "bg-gradient-to-br from-yellow-50 to-amber-200 hover:from-yellow-100 hover:to-amber-200"
                     }`}
                   >
                     <CardContent className="flex h-full flex-col items-center justify-center p-6">
