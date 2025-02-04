@@ -64,7 +64,7 @@ export function LoginForm({ onSubmit, error, isLoading }) {
 
         <Button
           type="submit"
-          className="h-12 w-full rounded-xl bg-blue-600 text-base font-medium hover:bg-blue-700"
+          className="h-12 w-full rounded-xl bg-indigo-600 text-base font-medium hover:bg-indigo-700"
           disabled={isLoading}
         >
           {isLoading ? (

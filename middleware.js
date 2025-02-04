@@ -9,7 +9,12 @@ export default withAuth(
     const isAuthPage = pathname.startsWith("/login");
     const isPublicPage = pathname === "/" || pathname === "/about";
 
-    // Check token expiration
+    // Allow access to public pages without any checks
+    if (isPublicPage) {
+      return NextResponse.next();
+    }
+
+    // Check token expiration for non-public pages
     if (token?.exp && Date.now() >= token.exp * 1000) {
       // Token has expired, redirect to login
       const from = encodeURIComponent(pathname);

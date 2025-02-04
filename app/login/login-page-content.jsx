@@ -37,8 +37,9 @@ export default function LoginPageContent() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-white md:flex md:items-center md:justify-center md:bg-gray-50">
-      <div className="w-full md:max-w-sm md:p-4">
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-gradient-to-t from-blue-50 to-rose-50">
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-100/[0.3] via-transparent to-rose-100/[0.3] blur-3xl" />
+      <div className="absolute z-10 w-full md:max-w-sm md:p-4">
         <div className="h-full w-full bg-white md:rounded-xl md:p-6 md:shadow-lg">
           <LoginForm
             onSubmit={handleLogin}
