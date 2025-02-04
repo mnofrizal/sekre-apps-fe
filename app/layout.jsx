@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "General Affairs Dashboard",
-  description: "Dashboard for General Affairs",
+  title: "General Affairs Suralaya",
+  description: "Pelayanan Terpadu Bidang Umum UBP Suralaya",
 };
 
 export default function RootLayout({ children }) {

@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 
 export function LoginForm({ onSubmit, error, isLoading }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -41,16 +42,29 @@ export function LoginForm({ onSubmit, error, isLoading }) {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="relative space-y-2">
           <Input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Password"
-            className="h-12 rounded-xl border-gray-200 px-4"
+            className="h-12 rounded-xl border-gray-200 px-4 pr-10"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={isLoading}
             required
           />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 transform hover:bg-transparent"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4 text-gray-500" />
+            ) : (
+              <Eye className="h-4 w-4 text-gray-500" />
+            )}
+          </Button>
         </div>
 
         <div className="flex justify-end">

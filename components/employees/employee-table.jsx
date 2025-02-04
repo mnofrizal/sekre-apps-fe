@@ -25,6 +25,7 @@ export function EmployeeTable({ employees }) {
             <TableHead>Sub Department</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
+            <TableHead>Secretary</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -38,6 +39,7 @@ export function EmployeeTable({ employees }) {
               <TableCell>{employee.subBidang}</TableCell>
               <TableCell>{employee.email}</TableCell>
               <TableCell>{employee.nomorHp}</TableCell>
+              <TableCell>{employee.sekretaris}</TableCell>
               <TableCell className="text-right">
                 <EmployeeActions employee={employee} />
               </TableCell>

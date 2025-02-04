@@ -1,5 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  getWhatsappGroups,
+  getDBWhatsappGroups,
+  saveGroupNotif,
+} from "@/lib/api/whatsapp";
 import {
   Card,
   CardContent,
@@ -7,11 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Bell, BellOff, Send, User, Shield } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -19,246 +19,332 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Users, Utensils, CheckCircle, Save, Bell } from "lucide-react";
+
+import { toast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { getUsers, updateUserNotifyStatus } from "@/lib/api/users";
 
-const WhatsAppSettings = () => {
-  const [selectedUser, setSelectedUser] = useState("");
-  const [isAdminNotify, setisAdminNotify] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [isTestingSent, setIsTestingSent] = useState(false);
-  const [phone, setPhone] = useState("");
-
-  const [users, setUsers] = useState([]);
+export default function WhatsAppNotificationSelection() {
+  const [listGroups, setListGroups] = useState([]);
+  const [selectedAdminGroup, setSelectedAdminGroup] = useState("");
+  const [selectedKitchenGroup, setSelectedKitchenGroup] = useState("");
+  const [selectedNotifGroup, setSelectedNotifGroup] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [dbGroups, setDbGroups] = useState({
+    ADMIN: null,
+    KITCHEN: null,
+    NOTIF: null,
+  });
 
-  const fetchUsers = async () => {
+  const fetchAllGroups = async () => {
     try {
-      setLoading(true);
-      const response = await getUsers();
-      const adminUsers = response.data.filter((user) => user.role === "ADMIN");
-      setUsers(adminUsers);
+      const [waResponse, dbResponse] = await Promise.all([
+        getWhatsappGroups(),
+        getDBWhatsappGroups(),
+      ]);
 
-      // Set first admin user as default selected
-      const notifyAdmins = adminUsers.filter((user) => user.isAdminNotify);
-      if (notifyAdmins.length > 0) {
-        setSelectedUser(notifyAdmins[0].id);
-        setPhone(notifyAdmins[0].phone || "");
+      if (waResponse.status && waResponse.data) {
+        setListGroups(waResponse.data);
       }
-    } catch (err) {
-      setError(err.message);
+
+      if (dbResponse.success && dbResponse.data) {
+        const adminGroup = dbResponse.data.find(
+          (group) => group.type === "ADMIN"
+        );
+        const kitchenGroup = dbResponse.data.find(
+          (group) => group.type === "KITCHEN"
+        );
+        const notifGroup = dbResponse.data.find(
+          (group) => group.type === "NOTIF"
+        );
+        setDbGroups({
+          ADMIN: adminGroup || null,
+          KITCHEN: kitchenGroup || null,
+          NOTIF: notifGroup || null,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch WhatsApp groups:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch WhatsApp groups",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchAllGroups();
   }, []);
 
-  // Update phone number when user is selected
-  useEffect(() => {
-    const user = users.find((user) => user.id === selectedUser);
-    if (user) {
-      setPhone(user.phone || "");
-    } else {
-      setPhone("");
-    }
-  }, [selectedUser, users]);
+  const getGroupName = (groups, selectedId) => {
+    return (
+      groups.find((group) => group.id === selectedId)?.name || "Not selected"
+    );
+  };
 
-  const selectedUserData = users.find((user) => user.id === selectedUser);
+  const handleSave = async (groupType) => {
+    const groupId =
+      groupType === "ADMIN"
+        ? selectedAdminGroup
+        : groupType === "KITCHEN"
+        ? selectedKitchenGroup
+        : selectedNotifGroup;
+    const groupName = getGroupName(listGroups, groupId);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
     try {
-      const userData = { isAdminNotify: true, phone };
-      console.log(selectedUser, userData);
-      await updateUserNotifyStatus(selectedUser, userData);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      await saveGroupNotif(groupType, groupId, groupName);
+      toast({
+        title: "Settings Saved",
+        description: `${
+          groupType.charAt(0).toUpperCase() + groupType.slice(1)
+        } group settings saved for ${groupName}.`,
+      });
+      // Fetch groups again to update the summary card
+      await fetchAllGroups();
     } catch (error) {
-      console.error("Error saving settings:", error);
+      console.error("Failed to save group settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save group settings. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleTestNotification = async () => {
-    setIsTestingSent(true);
-    // Here you would make an API call to send a test notification
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsTestingSent(false);
+  const handleTestNotification = (groupType) => {
+    const groupName =
+      groupType === "ADMIN"
+        ? getGroupName(listGroups, selectedAdminGroup)
+        : groupType === "KITCHEN"
+        ? getGroupName(listGroups, selectedKitchenGroup)
+        : getGroupName(listGroups, selectedNotifGroup);
 
-    if (selectedUserData) {
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    }
+    toast({
+      title: "Test Notification Sent",
+      description: `A test notification has been sent to ${groupName}.`,
+    });
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  return (
-    <div className="flex p-4">
-      <div className="w-full space-y-4">
-        {/* Summary Card */}
-        {selectedUserData && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                User Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={selectedUserData.avatar} />
-                    <AvatarFallback>
-                      {selectedUserData.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="text-lg font-semibold">
-                      {selectedUserData.name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {selectedUserData.email}
-                    </p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-gray-500">Username</Label>
-                    <p className="text-lg font-medium">
-                      {selectedUserData.username}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-500">Role</Label>
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-blue-500" />
-                      <p className="text-lg font-medium">
-                        {selectedUserData.role}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-gray-500">Status</Label>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`h-2 w-2 rounded-full ${
-                          selectedUserData.isActive
-                            ? "bg-green-500"
-                            : "bg-gray-400"
-                        }`}
-                      />
-                      <p className="text-lg font-medium">
-                        {selectedUserData.isActive ? "Active" : "Inactive"}
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-500">
-                      Phone Number
-                    </Label>
-                    <p className="text-lg font-medium">
-                      {phone || "Not provided"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        {/* Settings Card */}
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              WhatsApp Notifications
-            </CardTitle>
-            <CardDescription>
-              Configure WhatsApp notifications for users
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="user">Select User</Label>
-                <Select value={selectedUser} onValueChange={setSelectedUser}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a user" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem
-                        key={user.id}
-                        value={user.id}
-                        className="cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span>{user.name}</span>
-                          <span className="text-gray-500">({user.email})</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">WhatsApp Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+1234567890"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <Button type="submit" className="flex-1">
-                  Save Settings
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleTestNotification}
-                  disabled={!selectedUser || isTestingSent || !phone.trim()}
-                  className="flex items-center gap-2"
-                >
-                  <Send className="h-4 w-4" />
-                  {isTestingSent ? "Sending..." : "Test Notification"}
-                </Button>
-              </div>
-
-              {showSuccess && (
-                <Alert className="bg-green-50 text-green-900">
-                  <AlertDescription>
-                    {isTestingSent
-                      ? "Test notification sent successfully!"
-                      : "Settings saved successfully!"}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </form>
+          <CardContent className="flex items-center justify-center p-6">
+            <div className="text-center">
+              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+              <p className="text-sm text-muted-foreground">
+                Loading WhatsApp groups...
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto grid gap-6 p-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold">
+            WhatsApp Notification Settings
+          </CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
+            Select groups to receive notifications
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <Label
+              htmlFor="admin-group"
+              className="flex items-center space-x-2 text-sm font-medium"
+            >
+              <Users className="h-5 w-5" />
+              <span>Admin Group</span>
+            </Label>
+            <Select
+              value={selectedAdminGroup}
+              onValueChange={setSelectedAdminGroup}
+            >
+              <SelectTrigger id="admin-group" className="h-10 w-full">
+                <SelectValue placeholder="Select admin group" />
+              </SelectTrigger>
+              <SelectContent>
+                {listGroups.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button
+                onClick={() => handleSave("ADMIN")}
+                disabled={!selectedAdminGroup}
+                size="lg"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+              <Button
+                onClick={() => handleTestNotification("ADMIN")}
+                variant="outline"
+                disabled={!selectedAdminGroup}
+                size="lg"
+              >
+                <Bell className="mr-2 h-4 w-4" />
+                Test Notification
+              </Button>
+            </div>
+          </div>
+          <Separator className="my-4" />
+          <div className="space-y-4">
+            <Label
+              htmlFor="kitchen-group"
+              className="flex items-center space-x-2 text-sm font-medium"
+            >
+              <Utensils className="h-5 w-5" />
+              <span>Kitchen Group</span>
+            </Label>
+            <Select
+              value={selectedKitchenGroup}
+              onValueChange={setSelectedKitchenGroup}
+            >
+              <SelectTrigger id="kitchen-group" className="h-10 w-full">
+                <SelectValue placeholder="Select kitchen group" />
+              </SelectTrigger>
+              <SelectContent>
+                {listGroups.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button
+                onClick={() => handleSave("KITCHEN")}
+                disabled={!selectedKitchenGroup}
+                size="lg"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+              <Button
+                onClick={() => handleTestNotification("KITCHEN")}
+                variant="outline"
+                disabled={!selectedKitchenGroup}
+                size="lg"
+              >
+                <Bell className="mr-2 h-4 w-4" />
+                Test Notification
+              </Button>
+            </div>
+          </div>
+          <Separator className="my-4" />
+          <div className="space-y-4">
+            <Label
+              htmlFor="notif-group"
+              className="flex items-center space-x-2 text-sm font-medium"
+            >
+              <Bell className="h-5 w-5" />
+              <span>Notif Group</span>
+            </Label>
+            <Select
+              value={selectedNotifGroup}
+              onValueChange={setSelectedNotifGroup}
+            >
+              <SelectTrigger id="notif-group" className="h-10 w-full">
+                <SelectValue placeholder="Select notif group" />
+              </SelectTrigger>
+              <SelectContent>
+                {listGroups.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button
+                onClick={() => handleSave("NOTIF")}
+                disabled={!selectedNotifGroup}
+                size="lg"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+              <Button
+                onClick={() => handleTestNotification("NOTIF")}
+                variant="outline"
+                disabled={!selectedNotifGroup}
+                size="lg"
+              >
+                <Bell className="mr-2 h-4 w-4" />
+                Test Notification
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold">
+            Group Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center space-y-4">
+                  <Users className="h-12 w-12 text-primary" />
+                  <h3 className="text-xl font-medium">Admin Group</h3>
+                  <span className="text-lg">
+                    {dbGroups.ADMIN?.name || "Not configured"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center space-y-4">
+                  <Utensils className="h-12 w-12 text-primary" />
+                  <h3 className="text-xl font-medium">Kitchen Group</h3>
+                  <span className="text-lg">
+                    {dbGroups.KITCHEN?.name || "Not configured"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center space-y-4">
+                  <Bell className="h-12 w-12 text-primary" />
+                  <h3 className="text-xl font-medium">Notif Group</h3>
+                  <span className="text-lg">
+                    {dbGroups.NOTIF?.name || "Not configured"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          {dbGroups.ADMIN && dbGroups.KITCHEN && dbGroups.NOTIF && (
+            <div className="mt-6 flex items-center justify-center rounded-lg border bg-green-50 p-4 dark:bg-green-950/50">
+              <CheckCircle className="mr-3 h-6 w-6 text-green-500" />
+              <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                All groups configured
+              </span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default WhatsAppSettings;
+}

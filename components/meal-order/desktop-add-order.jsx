@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -26,16 +28,20 @@ import {
   User,
   X,
 } from "lucide-react";
-import { getSubBidangEmployees } from "@/lib/api/employees";
-import { getMenuItems } from "@/lib/api/menu";
 import { createOrder } from "@/lib/api/order";
 import { useToast } from "@/hooks/use-toast";
+import { useMealOrderStore } from "@/lib/store/meal-order-store";
+import { getMealCategory } from "@/lib/constant";
 
+// This array defines the meal time slots available for ordering in GMT+7 (WIB)
+// Each object contains:
+// - name: The Indonesian name for the meal time
+// - time: The UTC time for that meal in ISO format (7 hours behind WIB)
 const zonaWaktuOrder = [
-  { name: "Sarapan", time: "06:00:00.000Z" },
-  { name: "Makan Siang", time: "12:00:00.000Z" },
-  { name: "Makan Sore", time: "16:00:00.000Z" },
-  { name: "Makan Malam", time: "19:00:00.000Z" },
+  { name: "Sarapan", time: "23:00:00.000Z" }, // Breakfast at 6 AM WIB (11 PM UTC previous day)
+  { name: "Makan Siang", time: "05:00:00.000Z" }, // Lunch at 12 PM WIB (5 AM UTC)
+  { name: "Makan Sore", time: "09:00:00.000Z" }, // Afternoon meal at 4 PM WIB (9 AM UTC)
+  { name: "Makan Malam", time: "16:59:00.000Z" }, // Dinner at 11:59 PM WIB (4:59 PM UTC)
 ];
 
 export default function AddOrder() {
@@ -63,12 +69,100 @@ export default function AddOrder() {
   const [picName, setPicName] = useState("");
   const [picPhone, setPicPhone] = useState("");
 
-  // State for dynamic data
-  const [plnipNames, setPlnipNames] = useState({});
-  const [bidangOptions, setBidangOptions] = useState([]);
-  const [menuOptions, setMenuOptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // State for form submission
+  const [submitting, setSubmitting] = useState(false);
+  const [syncMenuEnabled, setSyncMenuEnabled] = useState({});
+  const [anonymousEnabled, setAnonymousEnabled] = useState({
+    IPS: false,
+    KOP: false,
+    RSU: false,
+    MITRA: false,
+  });
+
+  // Get data from Zustand store
+  const {
+    subBidangEmployees: plnipNames,
+    bidangOptions,
+    menuItems: menuOptions,
+    employeesLoading,
+    menuLoading,
+    employeesError,
+    menuError,
+    fetchSubBidangEmployees,
+    fetchMenuItems,
+  } = useMealOrderStore();
+
+  const loading = employeesLoading || menuLoading;
+  const error = employeesError || menuError;
+
+  // Load form data from localStorage on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem("mealOrderFormData");
+    if (savedData) {
+      const data = JSON.parse(savedData);
+      setZonaWaktu(data.zonaWaktu || "");
+      setSubBidang(data.subBidang || "");
+      setJudulPekerjaan(data.judulPekerjaan || "");
+      setCounts(
+        data.counts || {
+          PLNIP: 0,
+          IPS: 0,
+          KOP: 0,
+          RSU: 0,
+          MITRA: 0,
+        }
+      );
+      setEmployees(
+        data.employees || {
+          PLNIP: [],
+          IPS: [],
+          KOP: [],
+          RSU: [],
+          MITRA: [],
+        }
+      );
+      setDropPoint(data.dropPoint || "");
+      setPicName(data.picName || "");
+      setPicPhone(data.picPhone || "");
+      setSyncMenuEnabled(data.syncMenuEnabled || {});
+      setAnonymousEnabled(
+        data.anonymousEnabled || {
+          IPS: false,
+          KOP: false,
+          RSU: false,
+          MITRA: false,
+        }
+      );
+    }
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const formData = {
+      zonaWaktu,
+      subBidang,
+      judulPekerjaan,
+      counts,
+      employees,
+      dropPoint,
+      picName,
+      picPhone,
+      syncMenuEnabled,
+      anonymousEnabled,
+    };
+    localStorage.setItem("mealOrderFormData", JSON.stringify(formData));
+  }, [
+    zonaWaktu,
+    subBidang,
+    judulPekerjaan,
+    counts,
+    employees,
+    dropPoint,
+    picName,
+    picPhone,
+    syncMenuEnabled,
+    anonymousEnabled,
+  ]);
 
   // New state for asman
   const [asman, setAsman] = useState({
@@ -77,30 +171,15 @@ export default function AddOrder() {
     nomorHp: "",
   });
 
-  // Fetch dynamic data
+  // Fetch data if not already in store
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        // Fetch sub bidang employees
-        const subBidangResponse = await getSubBidangEmployees();
-        setPlnipNames(subBidangResponse.data);
-        setBidangOptions(Object.keys(subBidangResponse.data));
-
-        // Fetch menu items - store full menu item objects
-        const menuResponse = await getMenuItems();
-        setMenuOptions(menuResponse.data.filter((item) => item.isAvailable));
-      } catch (err) {
-        setError(err.message);
-        console.error("Error fetching data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+    if (Object.keys(plnipNames).length === 0) {
+      fetchSubBidangEmployees();
+    }
+    if (menuOptions.length === 0) {
+      fetchMenuItems();
+    }
+  }, [plnipNames, menuOptions, fetchSubBidangEmployees, fetchMenuItems]);
 
   // Update asman when subBidang changes
   useEffect(() => {
@@ -163,8 +242,64 @@ export default function AddOrder() {
 
   if (loading) {
     return (
-      <div className="flex h-[200px] items-center justify-center">
-        Loading...
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-6 items-start gap-6">
+          <Card className="col-span-4">
+            <CardHeader className="border-b bg-slate-100 p-5">
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Skeleton className="mb-2 h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div>
+                    <Skeleton className="mb-2 h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Skeleton className="mb-2 h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div>
+                    <Skeleton className="mb-2 h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+                  {Array(5)
+                    .fill()
+                    .map((_, i) => (
+                      <div key={i}>
+                        <Skeleton className="mb-2 h-4 w-20" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="col-span-2">
+            <CardHeader className="border-b bg-slate-100 p-5">
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -186,10 +321,20 @@ export default function AddOrder() {
     if (field === "menu") {
       // Find the full menu item object
       const menuItem = menuOptions.find((item) => item.id === value);
-      updatedEmployees[type][index] = {
-        ...updatedEmployees[type][index],
-        menu: menuItem, // Store the full menu item object
-      };
+
+      if (syncMenuEnabled[type]) {
+        // Update all menus of this type if sync is enabled
+        updatedEmployees[type] = updatedEmployees[type].map((emp) => ({
+          ...emp,
+          menu: menuItem,
+        }));
+      } else {
+        // Update just this employee's menu
+        updatedEmployees[type][index] = {
+          ...updatedEmployees[type][index],
+          menu: menuItem,
+        };
+      }
     } else {
       updatedEmployees[type][index] = {
         ...updatedEmployees[type][index],
@@ -199,18 +344,54 @@ export default function AddOrder() {
     setEmployees(updatedEmployees);
   };
 
-  // Update the renderEmployeeInputs function to handle menu selection with IDs
   const renderEmployeeInputs = (type, count) => (
     <div key={type} className="space-y-4">
-      <div className="flex items-center space-x-2">
-        <h3 className="text-lg font-semibold">{type}</h3>
-        {counts[type] > 0 &&
-          (employees[type].length === counts[type] &&
-          employees[type].every((emp) => emp.name && emp.menu) ? (
-            <Check className="text-green-500" />
-          ) : (
-            <X className="text-red-500" />
-          ))}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <h3 className="text-lg font-semibold">{type}</h3>
+          {counts[type] > 0 &&
+            (employees[type].length === counts[type] &&
+            employees[type].every((emp) => emp.name && emp.menu) ? (
+              <Check className="text-green-500" />
+            ) : (
+              <X className="text-red-500" />
+            ))}
+        </div>
+        <div className="flex items-center gap-4">
+          {type !== "PLNIP" && (
+            <div className="flex items-center space-x-2">
+              <Label htmlFor={`anonymous-${type}`}>Isi Anonim</Label>
+              <Switch
+                id={`anonymous-${type}`}
+                checked={anonymousEnabled[type] || false}
+                onCheckedChange={(checked) => {
+                  setAnonymousEnabled((prev) => ({ ...prev, [type]: checked }));
+                  if (checked) {
+                    // Fill all employee names with "Pegawai {type}"
+                    const updatedEmployees = { ...employees };
+                    updatedEmployees[type] = updatedEmployees[type].map(
+                      (emp) => ({
+                        ...emp,
+                        name: `Pegawai ${type}`,
+                      })
+                    );
+                    setEmployees(updatedEmployees);
+                  }
+                }}
+              />
+            </div>
+          )}
+          <div className="flex items-center space-x-2">
+            <Label htmlFor={`sync-${type}`}>Samakan Menu</Label>
+            <Switch
+              id={`sync-${type}`}
+              checked={syncMenuEnabled[type] || false}
+              onCheckedChange={(checked) => {
+                setSyncMenuEnabled((prev) => ({ ...prev, [type]: checked }));
+              }}
+            />
+          </div>
+        </div>
       </div>
       {Array(count)
         .fill()
@@ -289,22 +470,24 @@ export default function AddOrder() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isFormValid) {
+      setSubmitting(true);
       try {
+        const today = new Date();
+        const selectedTime = zonaWaktuOrder.find(
+          (z) => z.name === zonaWaktu
+        )?.time;
+        if (selectedTime) {
+          const [hours, minutes] = selectedTime.split(":");
+          today.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+        const requiredDate = today.toISOString();
+
         const submittedData = {
           judulPekerjaan,
           type: "MEAL",
           requestDate: new Date().toISOString(),
-          requiredDate: (() => {
-            const today = new Date();
-            const selectedTime = zonaWaktuOrder.find(
-              (z) => z.name === zonaWaktu
-            )?.time;
-            if (selectedTime) {
-              const [hours, minutes] = selectedTime.split(":");
-              today.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
-            }
-            return today.toISOString();
-          })(),
+          requiredDate,
+          category: getMealCategory(requiredDate),
           dropPoint,
           // subBidang,
           supervisor: {
@@ -335,6 +518,8 @@ export default function AddOrder() {
 
         try {
           const order = await createOrder(submittedData);
+          // Clear localStorage after successful submission
+          localStorage.removeItem("mealOrderFormData");
           toast({
             title: "Success",
             description: `Meal Order telah suskses dibuat!`,
@@ -351,6 +536,8 @@ export default function AddOrder() {
       } catch (error) {
         console.error("Error submitting order:", error);
         // Handle error appropriately
+      } finally {
+        setSubmitting(false);
       }
     }
   };
@@ -496,8 +683,19 @@ export default function AddOrder() {
                   </div>
                 </CardContent>
               </Card>
-              <Button type="submit" className="w-full" disabled={!isFormValid}>
-                Submit Order
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!isFormValid || submitting}
+              >
+                {submitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    <span>Submitting...</span>
+                  </div>
+                ) : (
+                  "Submit Pesanan"
+                )}
               </Button>
             </form>
           </CardContent>

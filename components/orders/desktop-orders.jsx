@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useMealOrderStore } from "@/lib/store/meal-order-store";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -70,53 +81,30 @@ const PENDING_STATUSES = [
 export function DesktopOrders() {
   const { toast } = useToast();
   const { data: session } = useSession();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const {
+    orders,
+    ordersLoading: loading,
+    ordersError: error,
+    fetchOrders,
+    updateOrder,
+  } = useMealOrderStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   const isSecretary = session?.user?.role === "SECRETARY";
   // Set default tab based on role
   const [activeTab, setActiveTab] = useState(isSecretary ? "all" : "approval");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
 
-  // Effect to handle initial fetch and check pending orders
+  // Effect to handle initial fetch and pending orders check
   useEffect(() => {
-    const initialFetch = async () => {
-      try {
-        setLoading(true);
-        const response = await getAllOrders();
-        setOrders(response.data);
+    const fetchAndCheckPending = async () => {
+      await fetchOrders();
 
-        // If not secretary and no pending orders, switch to all tab
-        if (!isSecretary) {
-          const hasPendingOrders = response.data.some((order) =>
-            PENDING_STATUSES.includes(order.status)
-          );
-
-          if (!hasPendingOrders && activeTab === "approval") {
-            setActiveTab("all");
-          }
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initialFetch();
-  }, [isSecretary]);
-
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllOrders();
-      setOrders(response.data);
-
-      // Check for pending orders after each fetch
+      // If not secretary and no pending orders, switch to all tab
       if (!isSecretary) {
-        const hasPendingOrders = response.data.some((order) =>
+        const hasPendingOrders = orders.some((order) =>
           PENDING_STATUSES.includes(order.status)
         );
 
@@ -124,12 +112,10 @@ export function DesktopOrders() {
           setActiveTab("all");
         }
       }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchAndCheckPending();
+  }, [isSecretary, fetchOrders]);
 
   const handleOrderClick = (order) => {
     setSelectedOrder(order);
@@ -138,14 +124,7 @@ export function DesktopOrders() {
 
   const handleApproveKitchen = async (order) => {
     try {
-      setLoading(true);
-      console.log(`Approving order with ID: ${order.id}`);
-      const response = await updateOrderStatus(order.id, "COMPLETED");
-
-      // Fetch fresh data
-      await fetchOrders();
-
-      // Show toast for successful approval
+      await updateOrder(order.id, "COMPLETED");
       toast({
         title: "Success",
         description: "Request successfully approved",
@@ -160,43 +139,26 @@ export function DesktopOrders() {
         description: `Failed to approve order with ID: ${order.id}: ${error.message}`,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleApprove = async (token) => {
     try {
-      setLoading(true);
       const response = await respondToRequest(token, true, "Request approved");
-
-      // Update local state first
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.token === token
-            ? { ...order, status: response.data.status }
-            : order
-        )
-      );
-
-      // Fetch fresh data
       await fetchOrders();
 
       // Only handle tab switching for non-secretary roles
       if (!isSecretary) {
-        // Check if there are any remaining orders in approval tab
         const remainingPendingOrders = orders.filter(
           (order) =>
             PENDING_STATUSES.includes(order.status) && order.token !== token
         );
 
-        // If no more pending orders, switch to "all" tab
         if (remainingPendingOrders.length === 0 && activeTab === "approval") {
           setActiveTab("all");
         }
       }
 
-      // Show toast for successful approval
       toast({
         title: "Success",
         description: "Request successfully approved",
@@ -204,49 +166,31 @@ export function DesktopOrders() {
       });
     } catch (error) {
       console.error(error);
-      setError("Failed to approve request");
       toast({
         title: "Error",
         description: "Failed to approve request",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleReject = async (token) => {
     try {
-      setLoading(true);
       const response = await respondToRequest(token, false, "Request rejected");
-
-      // Update local state first
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.token === token
-            ? { ...order, status: response.data.status }
-            : order
-        )
-      );
-
-      // Fetch fresh data
       await fetchOrders();
 
       // Only handle tab switching for non-secretary roles
       if (!isSecretary) {
-        // Check if there are any remaining orders in approval tab
         const remainingPendingOrders = orders.filter(
           (order) =>
             PENDING_STATUSES.includes(order.status) && order.token !== token
         );
 
-        // If no more pending orders, switch to "all" tab
         if (remainingPendingOrders.length === 0 && activeTab === "approval") {
           setActiveTab("all");
         }
       }
 
-      // Show toast for successful rejection
       toast({
         title: "Success",
         description: "Request successfully rejected",
@@ -254,18 +198,15 @@ export function DesktopOrders() {
       });
     } catch (error) {
       console.error(error);
-      setError("Failed to reject request");
       toast({
         title: "Error",
         description: "Failed to reject request",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const filteredOrders = useMemo(() => {
+  const filteredOrdersBeforePagination = useMemo(() => {
     if (isSecretary) {
       if (activeTab === "all") {
         // Show all orders except those with pending status
@@ -293,6 +234,25 @@ export function DesktopOrders() {
     );
   }, [orders, activeTab, isSecretary]);
 
+  const { paginatedOrders, totalPages } = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return {
+      paginatedOrders: filteredOrdersBeforePagination.slice(
+        startIndex,
+        endIndex
+      ),
+      totalPages: Math.ceil(
+        filteredOrdersBeforePagination.length / ITEMS_PER_PAGE
+      ),
+    };
+  }, [filteredOrdersBeforePagination, currentPage]);
+
+  // Reset to first page when changing tabs
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
+
   const pendingCount = useMemo(() => {
     return orders.filter((order) => PENDING_STATUSES.includes(order.status))
       .length;
@@ -317,8 +277,44 @@ export function DesktopOrders() {
 
   if (loading) {
     return (
-      <div className="flex h-[200px] items-center justify-center">
-        Loading...
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-[200px]" />
+          <Skeleton className="h-10 w-[150px]" />
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="flex w-full flex-col rounded-2xl">
+              <CardContent className="flex-grow p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-6 w-[120px]" />
+                      <Skeleton className="h-4 w-[80px]" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-6 w-[100px]" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-6">
+                    <Skeleton className="h-4 w-[100px]" />
+                    <Skeleton className="h-4 w-[120px]" />
+                    <Skeleton className="h-4 w-[180px]" />
+                    <Skeleton className="h-4 w-[140px]" />
+                  </div>
+                </div>
+                <div className="my-4">
+                  <Skeleton className="h-[1px] w-full" />
+                </div>
+                <div className="mt-4 flex justify-between gap-3">
+                  <Skeleton className="h-10 w-[140px]" />
+                  <Skeleton className="h-10 w-[140px]" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -363,13 +359,13 @@ export function DesktopOrders() {
           ))}
         </TabsList>
         <TabsContent value={activeTab} className="mt-6 space-y-4">
-          {filteredOrders.length === 0 ? (
+          {filteredOrdersBeforePagination.length === 0 ? (
             <Card className="flex h-[200px] items-center justify-center rounded-2xl text-gray-500">
               <h2 className="text-2xl font-bold">Tidak ada permintaan</h2>
             </Card>
           ) : (
             <div className="space-y-4">
-              {filteredOrders.map((order) => {
+              {paginatedOrders.map((order) => {
                 const OrderIcon = orderTypes[order.type]?.icon;
                 return (
                   <Card
@@ -491,6 +487,84 @@ export function DesktopOrders() {
                   </Card>
                 );
               })}
+              {totalPages > 1 && (
+                <div className="mt-4 flex justify-center">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() =>
+                            setCurrentPage((prev) => Math.max(1, prev - 1))
+                          }
+                          className={
+                            currentPage === 1
+                              ? "pointer-events-none opacity-50"
+                              : "cursor-pointer"
+                          }
+                        />
+                      </PaginationItem>
+                      {(() => {
+                        let pages = [];
+                        // Always show first page
+                        pages.push(1);
+
+                        let startPage = Math.max(2, currentPage - 1);
+                        let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+                        // Add ellipsis after first page if needed
+                        if (startPage > 2) {
+                          pages.push("...");
+                        }
+
+                        // Add pages around current page
+                        for (let i = startPage; i <= endPage; i++) {
+                          pages.push(i);
+                        }
+
+                        // Add ellipsis before last page if needed
+                        if (endPage < totalPages - 1) {
+                          pages.push("...");
+                        }
+
+                        // Always show last page if not already included
+                        if (totalPages > 1) {
+                          pages.push(totalPages);
+                        }
+
+                        return pages.map((page, index) => (
+                          <PaginationItem key={index}>
+                            {page === "..." ? (
+                              <PaginationEllipsis />
+                            ) : (
+                              <PaginationLink
+                                onClick={() => setCurrentPage(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            )}
+                          </PaginationItem>
+                        ));
+                      })()}
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() =>
+                            setCurrentPage((prev) =>
+                              Math.min(totalPages, prev + 1)
+                            )
+                          }
+                          className={
+                            currentPage === totalPages
+                              ? "pointer-events-none opacity-50"
+                              : "cursor-pointer"
+                          }
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useMealOrderStore } from "@/lib/store/meal-order-store";
 import {
   Search,
   MoreVertical,
@@ -12,9 +13,18 @@ import {
   Copy,
   LucideLink,
   Eye,
+  Calendar as CalendarIcon,
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -41,7 +51,6 @@ import Link from "next/link";
 import { OrderDetailDialog } from "./order-detail-dialog";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { deleteOrder, exportOrder, getAllOrders } from "@/lib/api/order";
-import { format } from "date-fns";
 import {
   FRONTEND_BASE_URL,
   getMealCategory,
@@ -55,54 +64,77 @@ import { useSession } from "next-auth/react";
 export function DesktopOrderList() {
   const { toast } = useToast();
   const { data: session } = useSession();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const {
+    orders,
+    ordersLoading: loading,
+    ordersError: error,
+    fetchOrders,
+    deleteOrder: deleteOrderFromStore,
+  } = useMealOrderStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState("All");
   const [subBidangFilter, setSubBidangFilter] = useState("All");
+  const [dateRange, setDateRange] = useState({
+    from: undefined,
+    to: undefined,
+  });
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: "ascending",
   });
+  const [uniqueSubBidangs, setUniqueSubBidangs] = useState([]);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllOrders();
-      setOrders(response.data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    // Extract unique subbidangs from orders
+    const subBidangs = [
+      ...new Set(orders.map((order) => order.supervisor.subBidang)),
+    ].sort();
+    setUniqueSubBidangs(subBidangs);
+  }, [orders]);
 
   const filteredOrders = useMemo(() => {
-    return orders.filter(
-      (order) =>
-        (order.judulPekerjaan
+    return orders.filter((order) => {
+      const matchesSearch =
+        order.judulPekerjaan
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
-          order.supervisor.name
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          order.supervisor.subBidang
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase())) &&
-        (statusFilter === "All" || order.status === statusFilter) &&
-        (subBidangFilter === "All" ||
-          order.supervisor.subBidang === subBidangFilter)
-    );
-  }, [orders, searchQuery, statusFilter, subBidangFilter]);
+        order.supervisor.name
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        order.supervisor.subBidang
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "All" || order.status === statusFilter;
+
+      const matchesSubBidang =
+        subBidangFilter === "All" ||
+        order.supervisor.subBidang === subBidangFilter;
+
+      const matchesDateRange =
+        !dateRange?.from ||
+        !dateRange?.to ||
+        (dateRange?.from &&
+          dateRange?.to &&
+          isWithinInterval(new Date(order.requestDate), {
+            start: startOfDay(dateRange.from),
+            end: endOfDay(dateRange.to),
+          }));
+
+      return (
+        matchesSearch && matchesStatus && matchesSubBidang && matchesDateRange
+      );
+    });
+  }, [orders, searchQuery, statusFilter, subBidangFilter, dateRange]);
 
   const sortedOrders = useMemo(() => {
     let sortableOrders = [...filteredOrders];
@@ -140,9 +172,7 @@ export function DesktopOrderList() {
   };
   const handleDelete = async (order) => {
     try {
-      await deleteOrder(order.id);
-      // Refresh the orders after deletion
-      fetchOrders();
+      await deleteOrderFromStore(order.id);
       toast({
         title: "Success",
         description: `Order telah berhasil dihapus!`,
@@ -250,8 +280,48 @@ export function DesktopOrderList() {
 
   if (loading) {
     return (
-      <div className="flex h-[200px] items-center justify-center">
-        Loading...
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-48" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-[150px]" />
+          <Skeleton className="h-10 w-[150px]" />
+          <Skeleton className="h-10 w-[250px]" />
+        </div>
+
+        <div className="rounded-lg border shadow-sm">
+          <div className="min-h-[400px] space-y-4 p-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-20" />
+                <Skeleton className="h-12 w-32" />
+                <Skeleton className="h-12 w-24" />
+                <Skeleton className="h-12 w-32" />
+                <Skeleton className="h-12 w-40" />
+                <Skeleton className="h-12 w-24" />
+                <Skeleton className="h-12 w-32" />
+                <Skeleton className="h-12 w-24" />
+                <Skeleton className="h-8 w-8" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-64" />
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -263,7 +333,7 @@ export function DesktopOrderList() {
           className="flex items-center space-x-1"
           onClick={() => requestSort(sortKey)}
         >
-          <span>{children}</span>
+          <span className="font-bold">{children}</span>
           {sortConfig.key === sortKey &&
             (sortConfig.direction === "ascending" ? (
               <ChevronUp className="h-4 w-4" />
@@ -273,6 +343,26 @@ export function DesktopOrderList() {
         </button>
       </TableHead>
     );
+  };
+
+  const getEntityQuantities = (employeeOrders) => {
+    const entityTotals = {};
+    if (!employeeOrders) return entityTotals;
+
+    employeeOrders.forEach((employee) => {
+      if (!employee || !employee.entity || !employee.orderItems) return;
+
+      if (!entityTotals[employee.entity]) {
+        entityTotals[employee.entity] = 0;
+      }
+
+      employee.orderItems.forEach((item) => {
+        if (item && typeof item.quantity === "number") {
+          entityTotals[employee.entity] += item.quantity;
+        }
+      });
+    });
+    return entityTotals;
   };
 
   return (
@@ -314,6 +404,53 @@ export function DesktopOrderList() {
             <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={subBidangFilter} onValueChange={setSubBidangFilter}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Filter by Subbidang" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Subbidang</SelectItem>
+            {uniqueSubBidangs.map((subBidang) => (
+              <SelectItem key={subBidang} value={subBidang}>
+                {subBidang}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={`w-[250px] justify-start text-left font-normal ${
+                !dateRange?.from && "text-muted-foreground"
+              }`}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateRange?.from ? (
+                dateRange?.to ? (
+                  <>
+                    {format(dateRange.from, "LLL dd, y")} -{" "}
+                    {format(dateRange.to, "LLL dd, y")}
+                  </>
+                ) : (
+                  format(dateRange.from, "LLL dd, y")
+                )
+              ) : (
+                <span>Pick a date range</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={dateRange?.from}
+              selected={dateRange || { from: undefined, to: undefined }}
+              onSelect={setDateRange}
+              numberOfMonths={2}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="rounded-lg border shadow-sm">
@@ -336,7 +473,9 @@ export function DesktopOrderList() {
                 Request Date
               </SortableTableHeader>
               <SortableTableHeader sortKey="status">Status</SortableTableHeader>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="py-5 text-right font-bold">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -361,7 +500,31 @@ export function DesktopOrderList() {
                     onClick={() => handleOrderClick(order)}
                     className="text-primary hover:underline"
                   >
-                    {order.employeeOrders.length} Porsi
+                    {(() => {
+                      console.log("employeeOrders:", order.employeeOrders);
+                      const entityTotals = getEntityQuantities(
+                        order.employeeOrders
+                      );
+                      console.log("entityTotals:", entityTotals);
+                      const totalPorsi = Object.values(entityTotals).reduce(
+                        (sum, qty) => sum + qty,
+                        0
+                      );
+                      console.log("totalPorsi:", totalPorsi);
+                      const entityBreakdown = Object.entries(entityTotals)
+                        .map(([entity, qty]) => `${entity}: ${qty}`)
+                        .join(", ");
+                      return totalPorsi > 0 ? (
+                        <span>
+                          {totalPorsi} Porsi{" "}
+                          {/* <div className="text-xs text-muted-foreground">
+                            {entityBreakdown}
+                          </div> */}
+                        </span>
+                      ) : (
+                        order.employeeOrders.length + " Porsi"
+                      );
+                    })()}
                   </button>
                 </TableCell>
                 <TableCell>
