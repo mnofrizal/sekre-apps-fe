@@ -119,14 +119,14 @@ export default function SummarySection({
                     count !== 0 && (
                       <div
                         key={type}
-                        className={`rounded-lg p-3 ${
+                        className={`rounded-lg p-3 shadow-sm border ${
                           type === "PLNIP"
-                            ? "bg-blue-50"
+                            ? "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200"
                             : type === "IPS"
-                            ? "bg-orange-50"
+                            ? "bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200"
                             : type === "KOP"
-                            ? "bg-green-50"
-                            : "bg-gray-50"
+                            ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200"
+                            : "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200"
                         }`}
                       >
                         <div className="mb-1 text-sm text-gray-500">{type}</div>
@@ -160,12 +160,12 @@ export default function SummarySection({
                       <div
                         className={`divide-y rounded-lg ${
                           type === "PLNIP"
-                            ? "bg-blue-50"
+                            ? "bg-gradient-to-br from-blue-50 to-blue-100"
                             : type === "IPS"
-                            ? "bg-orange-50"
+                            ? "bg-gradient-to-br from-orange-50 to-orange-100"
                             : type === "KOP"
-                            ? "bg-green-50"
-                            : "bg-gray-50"
+                            ? "bg-gradient-to-br from-green-50 to-green-100"
+                            : "bg-gradient-to-br from-gray-50 to-gray-100"
                         }`}
                       >
                         {(() => {

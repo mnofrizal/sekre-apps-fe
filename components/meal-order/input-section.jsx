@@ -19,11 +19,13 @@ import { Separator } from "@/components/ui/separator";
 import { Check, ClipboardList, ForkKnife, X } from "lucide-react";
 
 const TYPE_COLORS = {
-  PLNIP: "bg-blue-50/60 data-[state=active]:bg-blue-200/90 hover:bg-blue-100",
-  IPS: "bg-orange-50/60 data-[state=active]:bg-orange-200/90 hover:bg-orange-100",
-  KOP: "bg-green-50/60 data-[state=active]:bg-green-200/90 hover:bg-green-100",
-  RSU: "bg-purple-50/60 data-[state=active]:bg-purple-200/90 hover:bg-purple-100",
-  MITRA: "bg-gray-50/60 data-[state=active]:bg-gray-200/90 hover:bg-gray-100",
+  PLNIP:
+    "bg-blue-50/60 data-[state=active]:bg-gradient-to-br from-blue-100 to-blue-200 hover:bg-blue-100",
+  IPS: "bg-orange-50/60 data-[state=active]:bg-gradient-to-br from-orange-100 to-orange-200 hover:bg-orange-100",
+  KOP: "bg-green-50/60 data-[state=active]:bg-gradient-to-br from-green-100 to-green-200 hover:bg-green-100",
+  RSU: "bg-purple-50/60 data-[state=active]:bg-gradient-to-br from-purple-100 to-purple-200 hover:bg-purple-100",
+  MITRA:
+    "bg-gray-50/60 data-[state=active]:bg-gradient-to-br from-gray-100 to-gray-200 hover:bg-gray-100",
 };
 
 const TYPE_NAMES = {
@@ -511,7 +513,9 @@ export default function InputSection({
                 className={cn(
                   "border shadow-md flex flex-col items-center justify-center rounded-xl p-4 transition-all",
                   TYPE_COLORS[type],
-                  activeTypes[type] ? "ring-1 ring-primary ring-offset-0" : "",
+                  activeTypes[type]
+                    ? "ring-1 ring-primary/500 ring-offset-0"
+                    : "",
                   "hover:shadow-lg"
                 )}
               >
