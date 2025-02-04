@@ -335,13 +335,13 @@ export default function DeliveryConfirmation() {
                 <div className="">
                   <p>Waktu Pemesanan:</p>
                   <p className="text-muted-foreground">
-                    {orderDetails.requiredDate}
+                    {orderDetails.requestDate}
                   </p>
                 </div>
                 <div className="">
                   <p>Pesanan Untuk:</p>
                   <p className="text-muted-foreground">
-                    {orderDetails.category}
+                    {orderDetails.pesananType}
                   </p>
                 </div>
                 <div className="space-y-2 border-t pt-2">

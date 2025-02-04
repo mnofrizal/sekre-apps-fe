@@ -72,6 +72,12 @@ export default function AddOrder() {
   // State for form submission
   const [submitting, setSubmitting] = useState(false);
   const [syncMenuEnabled, setSyncMenuEnabled] = useState({});
+  const [anonymousEnabled, setAnonymousEnabled] = useState({
+    IPS: false,
+    KOP: false,
+    RSU: false,
+    MITRA: false,
+  });
 
   // Get data from Zustand store
   const {
@@ -119,6 +125,14 @@ export default function AddOrder() {
       setPicName(data.picName || "");
       setPicPhone(data.picPhone || "");
       setSyncMenuEnabled(data.syncMenuEnabled || {});
+      setAnonymousEnabled(
+        data.anonymousEnabled || {
+          IPS: false,
+          KOP: false,
+          RSU: false,
+          MITRA: false,
+        }
+      );
     }
   }, []);
 
@@ -134,6 +148,7 @@ export default function AddOrder() {
       picName,
       picPhone,
       syncMenuEnabled,
+      anonymousEnabled,
     };
     localStorage.setItem("mealOrderFormData", JSON.stringify(formData));
   }, [
@@ -146,6 +161,7 @@ export default function AddOrder() {
     picName,
     picPhone,
     syncMenuEnabled,
+    anonymousEnabled,
   ]);
 
   // New state for asman
@@ -328,7 +344,6 @@ export default function AddOrder() {
     setEmployees(updatedEmployees);
   };
 
-  // Update the renderEmployeeInputs function to handle menu selection with IDs
   const renderEmployeeInputs = (type, count) => (
     <div key={type} className="space-y-4">
       <div className="flex items-center justify-between">
@@ -342,15 +357,40 @@ export default function AddOrder() {
               <X className="text-red-500" />
             ))}
         </div>
-        <div className="flex items-center space-x-2">
-          <Label htmlFor={`sync-${type}`}>Samakan Menu</Label>
-          <Switch
-            id={`sync-${type}`}
-            checked={syncMenuEnabled[type] || false}
-            onCheckedChange={(checked) => {
-              setSyncMenuEnabled((prev) => ({ ...prev, [type]: checked }));
-            }}
-          />
+        <div className="flex items-center gap-4">
+          {type !== "PLNIP" && (
+            <div className="flex items-center space-x-2">
+              <Label htmlFor={`anonymous-${type}`}>Isi Anonim</Label>
+              <Switch
+                id={`anonymous-${type}`}
+                checked={anonymousEnabled[type] || false}
+                onCheckedChange={(checked) => {
+                  setAnonymousEnabled((prev) => ({ ...prev, [type]: checked }));
+                  if (checked) {
+                    // Fill all employee names with "Pegawai {type}"
+                    const updatedEmployees = { ...employees };
+                    updatedEmployees[type] = updatedEmployees[type].map(
+                      (emp) => ({
+                        ...emp,
+                        name: `Pegawai ${type}`,
+                      })
+                    );
+                    setEmployees(updatedEmployees);
+                  }
+                }}
+              />
+            </div>
+          )}
+          <div className="flex items-center space-x-2">
+            <Label htmlFor={`sync-${type}`}>Samakan Menu</Label>
+            <Switch
+              id={`sync-${type}`}
+              checked={syncMenuEnabled[type] || false}
+              onCheckedChange={(checked) => {
+                setSyncMenuEnabled((prev) => ({ ...prev, [type]: checked }));
+              }}
+            />
+          </div>
         </div>
       </div>
       {Array(count)
