@@ -70,9 +70,29 @@ export function OrderDetailsCard({
     // Only show employees when there's text input
     if (!picName) return [];
 
-    return employees.filter((employee) =>
-      employee.label.toLowerCase().includes(picName.toLowerCase())
+    const searchTerm = picName.toLowerCase();
+    // First filter all matching employees
+    const matches = employees.filter((employee) =>
+      employee.label.toLowerCase().includes(searchTerm)
     );
+
+    // Sort them by relevance (exact matches first, then by position of match)
+    matches.sort((a, b) => {
+      const aName = a.label.toLowerCase();
+      const bName = b.label.toLowerCase();
+
+      // Exact matches go first
+      if (aName === searchTerm) return -1;
+      if (bName === searchTerm) return 1;
+
+      // Then sort by position of match
+      const aIndex = aName.indexOf(searchTerm);
+      const bIndex = bName.indexOf(searchTerm);
+      return aIndex - bIndex;
+    });
+
+    // Return only the top 20 matches
+    return matches.slice(0, 20);
   }, [employees, picName]);
 
   const handleSelect = useCallback(
@@ -205,29 +225,34 @@ export function OrderDetailsCard({
                       }}
                     />
                     <CommandList>
-                      <CommandEmpty>
-                        {picName
-                          ? `No match found. Press enter to add "${picName}"`
-                          : "Type to search employees..."}
-                      </CommandEmpty>
+                      <CommandEmpty>Type to search employees...</CommandEmpty>
                       <CommandGroup>
-                        {filteredEmployees.map((employee) => (
-                          <CommandItem
-                            key={employee.value}
-                            value={employee.value}
-                            onSelect={handleSelect}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                picName === employee.value
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            {employee.label}
+                        {filteredEmployees.length === 0 && picName ? (
+                          // Show custom input when no matches
+                          <CommandItem value={picName} onSelect={handleSelect}>
+                            <Check className="mr-2 h-4 w-4 opacity-0" />
+                            {picName}
                           </CommandItem>
-                        ))}
+                        ) : (
+                          // Show filtered employees when there are matches
+                          filteredEmployees.map((employee) => (
+                            <CommandItem
+                              key={employee.value}
+                              value={employee.value}
+                              onSelect={handleSelect}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  picName === employee.value
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              {employee.label}
+                            </CommandItem>
+                          ))
+                        )}
                       </CommandGroup>
                     </CommandList>
                   </Command>
