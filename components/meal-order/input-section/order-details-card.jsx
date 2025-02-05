@@ -45,6 +45,8 @@ export function OrderDetailsCard({
   zonaWaktuOrder,
 }) {
   const [open, setOpen] = useState(false);
+  const [subBidangOpen, setSubBidangOpen] = useState(false);
+  const [searchSubBidang, setSearchSubBidang] = useState("");
   const { subBidangEmployees } = useMealOrderStore();
 
   const employees = useMemo(() => {
@@ -95,6 +97,15 @@ export function OrderDetailsCard({
     return matches.slice(0, 20);
   }, [employees, picName]);
 
+  const filteredBidangOptions = useMemo(() => {
+    if (!searchSubBidang) return bidangOptions;
+
+    const searchTerm = searchSubBidang.toLowerCase();
+    return bidangOptions.filter((option) =>
+      option.toLowerCase().includes(searchTerm)
+    );
+  }, [bidangOptions, searchSubBidang]);
+
   const handleSelect = useCallback(
     (currentValue) => {
       setPicName(currentValue);
@@ -110,6 +121,14 @@ export function OrderDetailsCard({
     [setPicName, findEmployeeDetails, setSubBidang, setPicPhone]
   );
 
+  const handleSelectBidang = useCallback(
+    (currentValue) => {
+      setSubBidang(currentValue);
+      setSubBidangOpen(false);
+    },
+    [setSubBidang]
+  );
+
   return (
     <Card className="p-6">
       <CardTitle className="mb-4 flex items-center gap-2 text-2xl font-semibold text-primary">
@@ -118,80 +137,6 @@ export function OrderDetailsCard({
       </CardTitle>
 
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="subBidang">Sub Bidang</Label>
-            <Select
-              value={subBidang}
-              onValueChange={setSubBidang}
-              className="w-full"
-            >
-              <SelectTrigger id="subBidang">
-                <SelectValue placeholder="Select Sub Bidang" />
-              </SelectTrigger>
-              <SelectContent>
-                {bidangOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="judulPekerjaan">Judul Pekerjaan</Label>
-            <Input
-              id="judulPekerjaan"
-              value={judulPekerjaan}
-              onChange={(e) => setJudulPekerjaan(e.target.value)}
-              placeholder="Enter judul pekerjaan"
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="zonaWaktu">Waktu</Label>
-            <Select
-              value={zonaWaktu.name}
-              onValueChange={(value) => {
-                const selectedOption = zonaWaktuOrder.find(
-                  (opt) => opt.name === value
-                );
-                if (selectedOption) {
-                  setZonaWaktu(value);
-                }
-              }}
-            >
-              <SelectTrigger id="zonaWaktu">
-                <SelectValue placeholder="Select Waktu" />
-              </SelectTrigger>
-              <SelectContent>
-                {zonaWaktuOrder
-                  .filter((option) => {
-                    const now = new Date();
-                    const optionTime = new Date();
-                    const [hours, minutes] = option.time.split(":");
-                    optionTime.setUTCHours(parseInt(hours), parseInt(minutes));
-                    return optionTime > now;
-                  })
-                  .map((option) => (
-                    <SelectItem key={option.name} value={option.name}>
-                      {option.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="dropPoint">Drop Point</Label>
-            <Input
-              id="dropPoint"
-              value={dropPoint}
-              onChange={(e) => setDropPoint(e.target.value)}
-              placeholder="Enter Droppoint"
-            />
-          </div>
-        </div>
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
           <div>
             <Label htmlFor="picName">PIC Name</Label>
@@ -267,6 +212,113 @@ export function OrderDetailsCard({
               value={picPhone}
               onChange={(e) => setPicPhone(e.target.value)}
               placeholder="Enter PIC phone number"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="subBidang">Sub Bidang</Label>
+            <div className="relative">
+              <Popover open={subBidangOpen} onOpenChange={setSubBidangOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={subBidangOpen}
+                    className="w-full justify-between"
+                  >
+                    {subBidang || "Select Sub Bidang"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[var(--radix-popover-trigger-width)] p-0"
+                  align="start"
+                >
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Search Sub Bidang..."
+                      value={searchSubBidang}
+                      onValueChange={setSearchSubBidang}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No Sub Bidang found...</CommandEmpty>
+                      <CommandGroup>
+                        {filteredBidangOptions.map((option) => (
+                          <CommandItem
+                            key={option}
+                            value={option}
+                            onSelect={handleSelectBidang}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                subBidang === option
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            {option}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="judulPekerjaan">Judul Pekerjaan</Label>
+            <Input
+              id="judulPekerjaan"
+              value={judulPekerjaan}
+              onChange={(e) => setJudulPekerjaan(e.target.value)}
+              placeholder="Enter judul pekerjaan"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="zonaWaktu">Waktu</Label>
+            <Select
+              value={zonaWaktu.name}
+              onValueChange={(value) => {
+                const selectedOption = zonaWaktuOrder.find(
+                  (opt) => opt.name === value
+                );
+                if (selectedOption) {
+                  setZonaWaktu(value);
+                }
+              }}
+            >
+              <SelectTrigger id="zonaWaktu">
+                <SelectValue placeholder="Select Waktu" />
+              </SelectTrigger>
+              <SelectContent>
+                {zonaWaktuOrder
+                  .filter((option) => {
+                    const now = new Date();
+                    const optionTime = new Date();
+                    const [hours, minutes] = option.time.split(":");
+                    optionTime.setUTCHours(parseInt(hours), parseInt(minutes));
+                    return optionTime > now;
+                  })
+                  .map((option) => (
+                    <SelectItem key={option.name} value={option.name}>
+                      {option.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="dropPoint">Drop Point</Label>
+            <Input
+              id="dropPoint"
+              value={dropPoint}
+              onChange={(e) => setDropPoint(e.target.value)}
+              placeholder="Enter Droppoint"
             />
           </div>
         </div>

@@ -437,6 +437,7 @@ export default function AddOrder() {
         dropPoint={dropPoint}
         picName={picName}
         picPhone={picPhone}
+        supervisor={asman}
         counts={counts}
         employees={employees}
         isFormValid={isFormValid}

@@ -28,6 +28,7 @@ export default function SummarySection({
   handleSubmit,
   isFormValid,
   submitting,
+  supervisor,
 }) {
   // Check if there are any employees with data
   const hasEmployeeData =
@@ -134,7 +135,7 @@ export default function SummarySection({
                 <div className="flex items-start gap-4">
                   <User className="mt-1 h-5 w-5 flex-shrink-0 text-gray-500" />
                   <div className="flex-1">
-                    <div className="mb-1 text-sm text-gray-500">PIC Name</div>
+                    <div className="mb-1 text-sm text-gray-500">PIC </div>
                     <div className="font-semibold text-primary">
                       {picName || "Not entered"}
                     </div>
@@ -147,6 +148,28 @@ export default function SummarySection({
                     <div className="mb-1 text-sm text-gray-500">PIC Phone</div>
                     <div className="font-semibold text-primary">
                       {picPhone || "Not entered"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Supervisor/ASMAN Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-start gap-4">
+                  <User className="mt-1 h-5 w-5 flex-shrink-0 text-gray-500" />
+                  <div className="flex-1">
+                    <div className="mb-1 text-sm text-gray-500">ASMAN </div>
+                    <div className="font-semibold text-primary">
+                      {supervisor.name || "Not entered"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <Phone className="mt-1 h-5 w-5 flex-shrink-0 text-gray-500" />
+                  <div className="flex-1">
+                    <div className="mb-1 text-sm text-gray-500">PIC Phone</div>
+                    <div className="font-semibold text-primary">
+                      0{supervisor.nomorHp || "Not entered"}
                     </div>
                   </div>
                 </div>
