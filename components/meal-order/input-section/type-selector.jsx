@@ -54,7 +54,7 @@ export function TypeSelector({ counts, activeTypes, onTypeToggle }) {
           className={cn(
             "border shadow-md flex flex-col items-center justify-center rounded-xl p-4 transition-all relative",
             TYPE_COLORS[type],
-            activeTypes[type] ? "ring-1 ring-primary/500 ring-offset-0" : "",
+            activeTypes[type] ? "" : "",
             "hover:shadow-lg"
           )}
         >
