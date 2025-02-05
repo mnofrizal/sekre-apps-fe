@@ -67,6 +67,9 @@ export function OrderDetailsCard({
   );
 
   const filteredEmployees = useMemo(() => {
+    // Only show employees when there's text input
+    if (!picName) return [];
+
     return employees.filter((employee) =>
       employee.label.toLowerCase().includes(picName.toLowerCase())
     );
@@ -203,7 +206,9 @@ export function OrderDetailsCard({
                     />
                     <CommandList>
                       <CommandEmpty>
-                        No match found. Press enter to add "{picName}".
+                        {picName
+                          ? `No match found. Press enter to add "${picName}"`
+                          : "Type to search employees..."}
                       </CommandEmpty>
                       <CommandGroup>
                         {filteredEmployees.map((employee) => (
