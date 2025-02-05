@@ -1,7 +1,22 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card, CardTitle } from "@/components/ui/card";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -9,6 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useCallback, useMemo, useState } from "react";
+
+import { useMealOrderStore } from "@/lib/store/meal-order-store";
 
 export function OrderDetailsCard({
   subBidang,
@@ -26,6 +44,49 @@ export function OrderDetailsCard({
   bidangOptions,
   zonaWaktuOrder,
 }) {
+  const [open, setOpen] = useState(false);
+  const { subBidangEmployees } = useMealOrderStore();
+
+  const employees = useMemo(() => {
+    // Get all employees from all sub-bidangs with their subBidang and phoneNumber
+    return Object.entries(subBidangEmployees).flatMap(([bidang, employees]) =>
+      employees.map((employee) => ({
+        value: employee.name,
+        label: employee.name,
+        subBidang: bidang,
+        phoneNumber: employee.nomorHp,
+      }))
+    );
+  }, [subBidangEmployees]);
+
+  const findEmployeeDetails = useCallback(
+    (name) => {
+      return employees.find((emp) => emp.value === name);
+    },
+    [employees]
+  );
+
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((employee) =>
+      employee.label.toLowerCase().includes(picName.toLowerCase())
+    );
+  }, [employees, picName]);
+
+  const handleSelect = useCallback(
+    (currentValue) => {
+      setPicName(currentValue);
+      setOpen(false);
+
+      // Find and set employee details if it's a known employee
+      const employeeDetails = findEmployeeDetails(currentValue);
+      if (employeeDetails) {
+        setSubBidang(employeeDetails.subBidang);
+        setPicPhone(employeeDetails.phoneNumber || "");
+      }
+    },
+    [setPicName, findEmployeeDetails, setSubBidang, setPicPhone]
+  );
+
   return (
     <Card className="p-6">
       <CardTitle className="mb-4 flex items-center gap-2 text-2xl font-semibold text-primary">
@@ -111,12 +172,63 @@ export function OrderDetailsCard({
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
           <div>
             <Label htmlFor="picName">PIC Name</Label>
-            <Input
-              id="picName"
-              value={picName}
-              onChange={(e) => setPicName(e.target.value)}
-              placeholder="Enter PIC name"
-            />
+            <div className="relative">
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between"
+                  >
+                    {picName || "Enter PIC name"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[var(--radix-popover-trigger-width)] p-0"
+                  align="start"
+                >
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Search PIC name..."
+                      value={picName}
+                      onValueChange={setPicName}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSelect(picName);
+                        }
+                      }}
+                    />
+                    <CommandList>
+                      <CommandEmpty>
+                        No match found. Press enter to add "{picName}".
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {filteredEmployees.map((employee) => (
+                          <CommandItem
+                            key={employee.value}
+                            value={employee.value}
+                            onSelect={handleSelect}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                picName === employee.value
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            {employee.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
           <div>
             <Label htmlFor="picPhone">PIC Phone Number</Label>
