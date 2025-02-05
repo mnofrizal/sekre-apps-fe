@@ -56,7 +56,7 @@ export function OrderDetailsCard({
         value: employee.name,
         label: employee.name,
         subBidang: bidang,
-        phoneNumber: employee.nomorHp,
+        phoneNumber: `0${employee.nomorHp}`,
       }))
     );
   }, [subBidangEmployees]);
@@ -172,31 +172,33 @@ export function OrderDetailsCard({
                     <CommandList>
                       <CommandEmpty>Type to search employees...</CommandEmpty>
                       <CommandGroup>
-                        {filteredEmployees.length === 0 && picName ? (
-                          // Show custom input when no matches
+                        {/* Always show user input as first option */}
+                        {picName && (
                           <CommandItem value={picName} onSelect={handleSelect}>
                             <Check className="mr-2 h-4 w-4 opacity-0" />
                             {picName}
                           </CommandItem>
-                        ) : (
-                          // Show filtered employees when there are matches
-                          filteredEmployees.map((employee) => (
-                            <CommandItem
-                              key={employee.value}
-                              value={employee.value}
-                              onSelect={handleSelect}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  picName === employee.value
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                )}
-                              />
-                              {employee.label}
-                            </CommandItem>
-                          ))
+                        )}
+                        {/* Then show filtered employees */}
+                        {filteredEmployees.map(
+                          (employee) =>
+                            employee.value !== picName && ( // Don't show if same as user input
+                              <CommandItem
+                                key={employee.value}
+                                value={employee.value}
+                                onSelect={handleSelect}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    picName === employee.value
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {employee.label}
+                              </CommandItem>
+                            )
                         )}
                       </CommandGroup>
                     </CommandList>

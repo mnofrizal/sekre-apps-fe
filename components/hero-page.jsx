@@ -183,8 +183,8 @@ export default function HeroGeometric({
             animate="visible"
           >
             <p className="mx-auto mb-8 max-w-xl px-4 text-base font-light leading-relaxed tracking-wide text-gray-600 sm:text-lg md:text-xl">
-              Crafting exceptional digital experiences through innovative design
-              and cutting-edge technology.
+              Penyediaan layanan terpadu Bidang Umum dalam konsep digitalisasi
+              untuk mendukung kebutuhan Unit.
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/login">

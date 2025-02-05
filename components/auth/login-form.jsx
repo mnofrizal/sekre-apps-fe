@@ -68,12 +68,9 @@ export function LoginForm({ onSubmit, error, isLoading }) {
         </div>
 
         <div className="flex justify-end">
-          <Link
-            href="/forgot-password"
-            className="text-sm font-medium text-blue-600 hover:text-blue-500"
-          >
+          <span className="text-sm font-medium text-blue-600 hover:text-blue-500">
             Forgot password?
-          </Link>
+          </span>
         </div>
 
         <Button
@@ -92,13 +89,9 @@ export function LoginForm({ onSubmit, error, isLoading }) {
         </Button>
 
         <div className="space-x-1 pt-4 text-center">
-          <span className="text-sm text-gray-500">Don't have an account?</span>
-          <Link
-            href="/register"
-            className="text-sm font-medium text-blue-600 hover:text-blue-500"
-          >
-            Sign up
-          </Link>
+          <span className="text-sm text-gray-500">
+            © General Affair Suralaya 2025
+          </span>
         </div>
       </form>
     </div>
