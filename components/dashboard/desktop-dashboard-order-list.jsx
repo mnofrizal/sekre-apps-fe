@@ -59,7 +59,7 @@ export function DesktopDashboardOrders() {
     try {
       setLoading(true);
       const response = await getAllOrders();
-      setOrders(response.data);
+      setOrders(response.data.requests);
     } catch (err) {
       setError(err.message);
     } finally {

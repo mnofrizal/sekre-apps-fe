@@ -41,6 +41,14 @@ export function DesktopDashboard() {
   const { orders, ordersLoading: loading, fetchOrders } = useMealOrderStore();
 
   const serviceRequests = useMemo(() => {
+    if (!orders)
+      return [
+        { type: "MEAL", count: 0 },
+        { type: "TRANSPORT", count: 0 },
+        { type: "ROOM", count: 0 },
+        { type: "STATIONARY", count: 0 },
+      ];
+
     const counts = orders.reduce((acc, order) => {
       acc[order.type] = (acc[order.type] || 0) + 1;
       return acc;
